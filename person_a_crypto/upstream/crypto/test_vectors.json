@@ -1,0 +1,85 @@
+{
+  "version": "a8-v1",
+  "note": "TEST_ONLY vectors for Person B integration. Not production keys. Not platform SKG. Do not log key bytes.",
+  "aead": {
+    "alg": "AES-256-GCM",
+    "local_id": 3,
+    "peer_id": 7,
+    "session_id": "link-3-7-s1",
+    "key_epoch": 0,
+    "key_id": "k-3-7-link-3-7-s1-e00",
+    "key_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "plaintext_hex": "6d697373696f6e2d636d642d3432",
+    "aad_hex": "7372633d332c6473743d372c7365713d31382c6d73675f747970653d646174612c6b65795f65706f63683d302c646972656374696f6e3d332d3e37",
+    "first_nonce_hex": "af0012650000000000000001",
+    "first_ciphertext_hex": "89906f63243c18a29677613746fd598f7f56304f57aae69012c67693abd1",
+    "tamper_status": "auth_fail",
+    "wrong_direction_status": "auth_fail"
+  },
+  "skg": {
+    "note": "synthetic RSSI seed=42; syndrome equality, not ECC; uncalibrated; not from simulation",
+    "seed": 42,
+    "n_samples": 64,
+    "local_id": 3,
+    "peer_id": 7,
+    "session_id": "link-3-7-s1",
+    "probe_id": "prb-00042",
+    "key_epoch": 1,
+    "key_id": "k-3-7-link-3-7-s1-e01",
+    "reconcile_blob_3_hex": "bb00728d0e6d51a0",
+    "reconcile_blob_7_hex": "bb00728d0e6d51a0",
+    "confirm_blob_3_hex": "efd11ac9588d940134d77b6869b28e04aae7b4949c0ef1d4babe913683baa364",
+    "confirm_blob_7_hex": "efd11ac9588d940134d77b6869b28e04aae7b4949c0ef1d4babe913683baa364",
+    "plaintext_hex": "6d697373696f6e2d636d642d3432",
+    "aad_hex": "7372633d332c6473743d372c7365713d31382c6d73675f747970653d646174612c6b65795f65706f63683d302c646972656374696f6e3d332d3e37",
+    "first_nonce_hex": "af0012650000000000000001",
+    "first_ciphertext_hex": "f564a00f1faedbed52c2ff21c07529063cb99f057090251963147f6c0ccb"
+  },
+  "skg_fail_scrambled": {
+    "seed": 7,
+    "peer_scrambled": true,
+    "probe_id": "prb-00042",
+    "status_3": "skg_fail",
+    "status_7": "skg_fail"
+  },
+  "identity": {
+    "alg": "Ed25519",
+    "note": "TEST_ONLY PEM. Load at sim init; private PEM stays in A module; never log.",
+    "session_id": "link-3-7-s1",
+    "probe_id": "prb-00042",
+    "node3": {
+      "node_id": 3,
+      "identity_id": "uav-3",
+      "private_key_pem": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIAABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4f\n-----END PRIVATE KEY-----\n",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAA6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=\n-----END PUBLIC KEY-----\n"
+    },
+    "node7": {
+      "node_id": 7,
+      "identity_id": "uav-7",
+      "private_key_pem": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEICAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Ojs8PT4/\n-----END PRIVATE KEY-----\n",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAKay64UG8yvCyLhqU000LxzYeUm0L/hLIl5S8kyKWbdc=\n-----END PUBLIC KEY-----\n"
+    },
+    "blob_hex": "bb00728d0e6d51a0",
+    "signature_3_hex": "e6ed452ec27a0b30c0fcae6a53ccef23fbe57297e0a169cc8eb80b42112daaf701c46550882cf90a33664f2161af3c70cd944fe0fcec13362a135f07175e6f09",
+    "verify_ok_status": "ok",
+    "tampered_signature_status": "identity_fail"
+  },
+  "observation_missing": {
+    "note": "V1 missing probe: measurement/snr_db/noise_var are null",
+    "mapping": {
+      "local_id": 3,
+      "peer_id": 7,
+      "session_id": "link-3-7-s1",
+      "probe_id": "prb-missing",
+      "sim_time_s": 12.04,
+      "freq_hz": 3500000000.0,
+      "role": "tx",
+      "measurement_kind": "rssi_dbm",
+      "measurement": null,
+      "snr_db": null,
+      "noise_var": null,
+      "missing": true
+    },
+    "expected_status": "skg_fail"
+  }
+}

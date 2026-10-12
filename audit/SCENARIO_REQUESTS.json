@@ -1,0 +1,2004 @@
+[
+  {
+    "name": "overview-3.2",
+    "key": "overview",
+    "options": {
+      "simulationDurationS": 3.2
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 3.2,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": true,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.2,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.4,
+          "count": 6,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-demo-session",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "spoofing-3.2",
+    "key": "spoofing",
+    "options": {
+      "simulationDurationS": 3.2
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 3.2,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "SPOOFING",
+          "attack_subtype": "KNOWN_ID_CONFLICT",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.4,
+          "end_s": 2.4,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {},
+          "parameters": {
+            "claimed_src_id": 0,
+            "source_copy_mode": "LEGITIMATE_FRAME_COPY",
+            "legitimate_source_id": 2
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.2,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.4,
+          "count": 6,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-demo-session",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "spoofing-5",
+    "key": "spoofing",
+    "options": {
+      "simulationDurationS": 5
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 5,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "SPOOFING",
+          "attack_subtype": "KNOWN_ID_CONFLICT",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.6,
+          "end_s": 3.8,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {},
+          "parameters": {
+            "claimed_src_id": 0,
+            "source_copy_mode": "LEGITIMATE_FRAME_COPY",
+            "legitimate_source_id": 2
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.2,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.4,
+          "count": 10,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-demo-session",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "spoofing-10",
+    "key": "spoofing",
+    "options": {
+      "simulationDurationS": 10
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 10,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "SPOOFING",
+          "attack_subtype": "KNOWN_ID_CONFLICT",
+          "scheduled_start_s": 0,
+          "impact_start_s": 1.2,
+          "end_s": 7.6,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {},
+          "parameters": {
+            "claimed_src_id": 0,
+            "source_copy_mode": "LEGITIMATE_FRAME_COPY",
+            "legitimate_source_id": 2
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.2,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.4,
+          "count": 23,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-demo-session",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "spoofing-20",
+    "key": "spoofing",
+    "options": {
+      "simulationDurationS": 20
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 20,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "SPOOFING",
+          "attack_subtype": "KNOWN_ID_CONFLICT",
+          "scheduled_start_s": 0,
+          "impact_start_s": 2.6,
+          "end_s": 15,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {},
+          "parameters": {
+            "claimed_src_id": 0,
+            "source_copy_mode": "LEGITIMATE_FRAME_COPY",
+            "legitimate_source_id": 2
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.2,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.4,
+          "count": 48,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-demo-session",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "spoofing-30",
+    "key": "spoofing",
+    "options": {
+      "simulationDurationS": 30
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 30,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "SPOOFING",
+          "attack_subtype": "KNOWN_ID_CONFLICT",
+          "scheduled_start_s": 0,
+          "impact_start_s": 3.8,
+          "end_s": 22.6,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {},
+          "parameters": {
+            "claimed_src_id": 0,
+            "source_copy_mode": "LEGITIMATE_FRAME_COPY",
+            "legitimate_source_id": 2
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.2,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.4,
+          "count": 73,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-demo-session",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "fdi-3.2",
+    "key": "fdi",
+    "options": {
+      "simulationDurationS": 3.2
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 3.2,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "FDI",
+          "attack_subtype": "TELEMETRY_ABRUPT_CHANGE",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.4,
+          "end_s": 2.4,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [
+            "link-2-1"
+          ],
+          "intensity": {},
+          "parameters": {
+            "injection_mode": "CAPTURE_MODIFY_INJECT",
+            "legitimate_source_id": 2,
+            "field": "altitude_m",
+            "absolute_offset": 0.1,
+            "bias_model": "BOUNDED_PERIODIC",
+            "bias_amplitude_m": 0.04,
+            "bias_period_packets": 11
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "TELEMETRY",
+          "start_s": 0.2,
+          "payload": {},
+          "interval_s": 0.2,
+          "count": 10,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-fdi-session",
+          "sequence_start": 100,
+          "measurement_model": {
+            "name": "BOUNDED_ALTITUDE_SENSOR",
+            "amplitude_m": 0.04,
+            "period_s": 2
+          }
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "fdi-5",
+    "key": "fdi",
+    "options": {
+      "simulationDurationS": 5
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 5,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "FDI",
+          "attack_subtype": "TELEMETRY_ABRUPT_CHANGE",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.6,
+          "end_s": 3.8,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [
+            "link-2-1"
+          ],
+          "intensity": {},
+          "parameters": {
+            "injection_mode": "CAPTURE_MODIFY_INJECT",
+            "legitimate_source_id": 2,
+            "field": "altitude_m",
+            "absolute_offset": 0.1,
+            "bias_model": "BOUNDED_PERIODIC",
+            "bias_amplitude_m": 0.04,
+            "bias_period_packets": 11
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "TELEMETRY",
+          "start_s": 0.2,
+          "payload": {},
+          "interval_s": 0.2,
+          "count": 19,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-fdi-session",
+          "sequence_start": 100,
+          "measurement_model": {
+            "name": "BOUNDED_ALTITUDE_SENSOR",
+            "amplitude_m": 0.04,
+            "period_s": 2
+          }
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "fdi-10",
+    "key": "fdi",
+    "options": {
+      "simulationDurationS": 10
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 10,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "FDI",
+          "attack_subtype": "TELEMETRY_ABRUPT_CHANGE",
+          "scheduled_start_s": 0,
+          "impact_start_s": 1.2,
+          "end_s": 7.6,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [
+            "link-2-1"
+          ],
+          "intensity": {},
+          "parameters": {
+            "injection_mode": "CAPTURE_MODIFY_INJECT",
+            "legitimate_source_id": 2,
+            "field": "altitude_m",
+            "absolute_offset": 0.1,
+            "bias_model": "BOUNDED_PERIODIC",
+            "bias_amplitude_m": 0.04,
+            "bias_period_packets": 11
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "TELEMETRY",
+          "start_s": 0.2,
+          "payload": {},
+          "interval_s": 0.2,
+          "count": 44,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-fdi-session",
+          "sequence_start": 100,
+          "measurement_model": {
+            "name": "BOUNDED_ALTITUDE_SENSOR",
+            "amplitude_m": 0.04,
+            "period_s": 2
+          }
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "fdi-20",
+    "key": "fdi",
+    "options": {
+      "simulationDurationS": 20
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 20,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "FDI",
+          "attack_subtype": "TELEMETRY_ABRUPT_CHANGE",
+          "scheduled_start_s": 0,
+          "impact_start_s": 2.6,
+          "end_s": 15,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [
+            "link-2-1"
+          ],
+          "intensity": {},
+          "parameters": {
+            "injection_mode": "CAPTURE_MODIFY_INJECT",
+            "legitimate_source_id": 2,
+            "field": "altitude_m",
+            "absolute_offset": 0.1,
+            "bias_model": "BOUNDED_PERIODIC",
+            "bias_amplitude_m": 0.04,
+            "bias_period_packets": 11
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "TELEMETRY",
+          "start_s": 0.2,
+          "payload": {},
+          "interval_s": 0.2,
+          "count": 94,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-fdi-session",
+          "sequence_start": 100,
+          "measurement_model": {
+            "name": "BOUNDED_ALTITUDE_SENSOR",
+            "amplitude_m": 0.04,
+            "period_s": 2
+          }
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "fdi-30",
+    "key": "fdi",
+    "options": {
+      "simulationDurationS": 30
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 30,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "FDI",
+          "attack_subtype": "TELEMETRY_ABRUPT_CHANGE",
+          "scheduled_start_s": 0,
+          "impact_start_s": 3.8,
+          "end_s": 22.6,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [
+            "link-2-1"
+          ],
+          "intensity": {},
+          "parameters": {
+            "injection_mode": "CAPTURE_MODIFY_INJECT",
+            "legitimate_source_id": 2,
+            "field": "altitude_m",
+            "absolute_offset": 0.1,
+            "bias_model": "BOUNDED_PERIODIC",
+            "bias_amplitude_m": 0.04,
+            "bias_period_packets": 11
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "TELEMETRY",
+          "start_s": 0.2,
+          "payload": {},
+          "interval_s": 0.2,
+          "count": 144,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-fdi-session",
+          "sequence_start": 100,
+          "measurement_model": {
+            "name": "BOUNDED_ALTITUDE_SENSOR",
+            "amplitude_m": 0.04,
+            "period_s": 2
+          }
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "dos-3.2",
+    "key": "dos",
+    "options": {
+      "simulationDurationS": 3.2
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 3.2,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 8,
+      "flooding_detection_enabled": true,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "DOS",
+          "attack_subtype": "FLOODING",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.4,
+          "end_s": 2,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {
+            "value": 80,
+            "unit": "pps"
+          },
+          "parameters": {
+            "packet_type": "STATUS",
+            "target_packet_size_bytes": 192
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.2,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.3,
+          "count": 8,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-dos-legitimate",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "dos-5",
+    "key": "dos",
+    "options": {
+      "simulationDurationS": 5
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 5,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 8,
+      "flooding_detection_enabled": true,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "DOS",
+          "attack_subtype": "FLOODING",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.4,
+          "end_s": 2,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {
+            "value": 80,
+            "unit": "pps"
+          },
+          "parameters": {
+            "packet_type": "STATUS",
+            "target_packet_size_bytes": 192
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.2,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.3,
+          "count": 14,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-dos-legitimate",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "dos-10",
+    "key": "dos",
+    "options": {
+      "simulationDurationS": 10
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 10,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 8,
+      "flooding_detection_enabled": true,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "DOS",
+          "attack_subtype": "FLOODING",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.4,
+          "end_s": 2,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {
+            "value": 80,
+            "unit": "pps"
+          },
+          "parameters": {
+            "packet_type": "STATUS",
+            "target_packet_size_bytes": 192
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.2,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.3,
+          "count": 30,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-dos-legitimate",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "dos-20",
+    "key": "dos",
+    "options": {
+      "simulationDurationS": 20
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 20,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 8,
+      "flooding_detection_enabled": true,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "DOS",
+          "attack_subtype": "FLOODING",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.4,
+          "end_s": 2,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {
+            "value": 80,
+            "unit": "pps"
+          },
+          "parameters": {
+            "packet_type": "STATUS",
+            "target_packet_size_bytes": 192
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.2,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.3,
+          "count": 64,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-dos-legitimate",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "dos-30",
+    "key": "dos",
+    "options": {
+      "simulationDurationS": 30
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 30,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 8,
+      "flooding_detection_enabled": true,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "DOS",
+          "attack_subtype": "FLOODING",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.4,
+          "end_s": 2,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {
+            "value": 80,
+            "unit": "pps"
+          },
+          "parameters": {
+            "packet_type": "STATUS",
+            "target_packet_size_bytes": 192
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.2,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.3,
+          "count": 97,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-dos-legitimate",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "eavesdropping-4",
+    "key": "eavesdropping",
+    "options": {
+      "simulationDurationS": 4
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 31,
+      "duration_s": 4,
+      "step_s": 0.1,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": true,
+      "queue_capacity": 128,
+      "tx_service_per_step": 32,
+      "rx_service_per_step": 32,
+      "phy_sample_interval_s": 10,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "EAVESDROPPING",
+          "attack_subtype": "CIPHERTEXT_ONLY",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.1,
+          "end_s": 3.8,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [
+            "link-2-1"
+          ],
+          "intensity": {},
+          "parameters": {
+            "receiver_radius_m": 1000
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.1,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.2,
+          "count": 18,
+          "sensitive": true,
+          "encrypt": true,
+          "session_id": "official-web-eaves-session",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "eavesdropping-5",
+    "key": "eavesdropping",
+    "options": {
+      "simulationDurationS": 5
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 31,
+      "duration_s": 5,
+      "step_s": 0.1,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": true,
+      "queue_capacity": 128,
+      "tx_service_per_step": 32,
+      "rx_service_per_step": 32,
+      "phy_sample_interval_s": 10,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "EAVESDROPPING",
+          "attack_subtype": "CIPHERTEXT_ONLY",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.1,
+          "end_s": 4.8,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [
+            "link-2-1"
+          ],
+          "intensity": {},
+          "parameters": {
+            "receiver_radius_m": 1000
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.1,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.2,
+          "count": 23,
+          "sensitive": true,
+          "encrypt": true,
+          "session_id": "official-web-eaves-session",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "eavesdropping-10",
+    "key": "eavesdropping",
+    "options": {
+      "simulationDurationS": 10
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 31,
+      "duration_s": 10,
+      "step_s": 0.1,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": true,
+      "queue_capacity": 128,
+      "tx_service_per_step": 32,
+      "rx_service_per_step": 32,
+      "phy_sample_interval_s": 10,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "EAVESDROPPING",
+          "attack_subtype": "CIPHERTEXT_ONLY",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.1,
+          "end_s": 9.8,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [
+            "link-2-1"
+          ],
+          "intensity": {},
+          "parameters": {
+            "receiver_radius_m": 1000
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.1,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.2,
+          "count": 48,
+          "sensitive": true,
+          "encrypt": true,
+          "session_id": "official-web-eaves-session",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "eavesdropping-20",
+    "key": "eavesdropping",
+    "options": {
+      "simulationDurationS": 20
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 31,
+      "duration_s": 20,
+      "step_s": 0.1,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": true,
+      "queue_capacity": 128,
+      "tx_service_per_step": 32,
+      "rx_service_per_step": 32,
+      "phy_sample_interval_s": 10,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "EAVESDROPPING",
+          "attack_subtype": "CIPHERTEXT_ONLY",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.1,
+          "end_s": 19.8,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [
+            "link-2-1"
+          ],
+          "intensity": {},
+          "parameters": {
+            "receiver_radius_m": 1000
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.1,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.2,
+          "count": 98,
+          "sensitive": true,
+          "encrypt": true,
+          "session_id": "official-web-eaves-session",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "eavesdropping-30",
+    "key": "eavesdropping",
+    "options": {
+      "simulationDurationS": 30
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 31,
+      "duration_s": 30,
+      "step_s": 0.1,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": true,
+      "queue_capacity": 128,
+      "tx_service_per_step": 32,
+      "rx_service_per_step": 32,
+      "phy_sample_interval_s": 10,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "EAVESDROPPING",
+          "attack_subtype": "CIPHERTEXT_ONLY",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.1,
+          "end_s": 29.8,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [
+            "link-2-1"
+          ],
+          "intensity": {},
+          "parameters": {
+            "receiver_radius_m": 1000
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.1,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.2,
+          "count": 148,
+          "sensitive": true,
+          "encrypt": true,
+          "session_id": "official-web-eaves-session",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "replay-3.2",
+    "key": "replay",
+    "options": {
+      "simulationDurationS": 3.2
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 3.2,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "REPLAY",
+          "attack_subtype": "IMMEDIATE_REPLAY",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.6,
+          "end_s": 2.4,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {},
+          "parameters": {
+            "max_capture_age_s": 0.8
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "TELEMETRY",
+          "start_s": 0.2,
+          "payload": {
+            "altitude_m": 100
+          },
+          "interval_s": 0.4,
+          "count": 1,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-replay-live",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "replay-5",
+    "key": "replay",
+    "options": {
+      "simulationDurationS": 5
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 5,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "REPLAY",
+          "attack_subtype": "IMMEDIATE_REPLAY",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.6,
+          "end_s": 2.4,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {},
+          "parameters": {
+            "max_capture_age_s": 0.8
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "TELEMETRY",
+          "start_s": 0.2,
+          "payload": {
+            "altitude_m": 100
+          },
+          "interval_s": 0.4,
+          "count": 1,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-replay-live",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "replay-10",
+    "key": "replay",
+    "options": {
+      "simulationDurationS": 10
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 10,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "REPLAY",
+          "attack_subtype": "IMMEDIATE_REPLAY",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.6,
+          "end_s": 2.4,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {},
+          "parameters": {
+            "max_capture_age_s": 0.8
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "TELEMETRY",
+          "start_s": 0.2,
+          "payload": {
+            "altitude_m": 100
+          },
+          "interval_s": 0.4,
+          "count": 1,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-replay-live",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "replay-20",
+    "key": "replay",
+    "options": {
+      "simulationDurationS": 20
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 20,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "REPLAY",
+          "attack_subtype": "IMMEDIATE_REPLAY",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.6,
+          "end_s": 2.4,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {},
+          "parameters": {
+            "max_capture_age_s": 0.8
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "TELEMETRY",
+          "start_s": 0.2,
+          "payload": {
+            "altitude_m": 100
+          },
+          "interval_s": 0.4,
+          "count": 1,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-replay-live",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "replay-30",
+    "key": "replay",
+    "options": {
+      "simulationDurationS": 30
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 30,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "REPLAY",
+          "attack_subtype": "IMMEDIATE_REPLAY",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.6,
+          "end_s": 2.4,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {},
+          "parameters": {
+            "max_capture_age_s": 0.8
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "TELEMETRY",
+          "start_s": 0.2,
+          "payload": {
+            "altitude_m": 100
+          },
+          "interval_s": 0.4,
+          "count": 1,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-replay-live",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "DELAYED_REPLAY",
+    "key": "replay",
+    "options": {
+      "replaySubtype": "DELAYED_REPLAY"
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 3.2,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 0.5,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "REPLAY",
+          "attack_subtype": "DELAYED_REPLAY",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.4,
+          "end_s": 2.4,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {},
+          "parameters": {
+            "delay_s": 0.8
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "TELEMETRY",
+          "start_s": 0.2,
+          "payload": {
+            "altitude_m": 100
+          },
+          "interval_s": 0.4,
+          "count": 1,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-replay-live",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "OLD_SESSION_REPLAY",
+    "key": "replay",
+    "options": {
+      "replaySubtype": "OLD_SESSION_REPLAY"
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 3.2,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 12,
+      "flooding_detection_enabled": false,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "REPLAY",
+          "attack_subtype": "OLD_SESSION_REPLAY",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.8,
+          "end_s": 2.4,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {},
+          "parameters": {
+            "stale_session_id": "frontend-replay-old"
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "TELEMETRY",
+          "start_s": 0.2,
+          "payload": {
+            "altitude_m": 100
+          },
+          "interval_s": 0.4,
+          "count": 1,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-replay-old",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [
+        {
+          "sender_node_id": 2,
+          "receiver_node_id": 1,
+          "rotate_at_s": 0.6,
+          "old_session_id": "frontend-replay-old",
+          "new_session_id": "frontend-replay-new"
+        }
+      ],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "dos-9pps",
+    "key": "dos",
+    "options": {
+      "floodingRatePps": 9
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 3.2,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 8,
+      "flooding_detection_enabled": true,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "DOS",
+          "attack_subtype": "FLOODING",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.4,
+          "end_s": 2,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {
+            "value": 9,
+            "unit": "pps"
+          },
+          "parameters": {
+            "packet_type": "STATUS",
+            "target_packet_size_bytes": 192
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.2,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.3,
+          "count": 8,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-dos-legitimate",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  },
+  {
+    "name": "dos-500pps",
+    "key": "dos",
+    "options": {
+      "floodingRatePps": 500
+    },
+    "request": {
+      "demo_profile": "V17",
+      "seed": 42,
+      "duration_s": 3.2,
+      "step_s": 0.2,
+      "node_count": 4,
+      "auto_traffic": false,
+      "encrypt_sensitive": false,
+      "queue_capacity": 128,
+      "tx_service_per_step": 64,
+      "rx_service_per_step": 64,
+      "phy_sample_interval_s": 0.2,
+      "traffic_statistics_window_s": 1,
+      "flooding_packet_rate_threshold_pps": 8,
+      "flooding_detection_enabled": true,
+      "replay_timestamp_freshness_s": 2,
+      "replay_reorder_window_size": 32,
+      "attack_specs": [
+        {
+          "attack_family": "DOS",
+          "attack_subtype": "FLOODING",
+          "scheduled_start_s": 0,
+          "impact_start_s": 0.4,
+          "end_s": 2,
+          "attacker_node_id": -1,
+          "target_node_ids": [
+            1
+          ],
+          "target_link_ids": [],
+          "intensity": {
+            "value": 500,
+            "unit": "pps"
+          },
+          "parameters": {
+            "packet_type": "STATUS",
+            "target_packet_size_bytes": 192
+          }
+        }
+      ],
+      "traffic_specs": [
+        {
+          "source_node_id": 2,
+          "target_node_id": 1,
+          "packet_type": "STATUS",
+          "start_s": 0.2,
+          "payload": {
+            "status_code": 1,
+            "value": 42
+          },
+          "interval_s": 0.3,
+          "count": 8,
+          "sensitive": false,
+          "encrypt": false,
+          "session_id": "frontend-dos-legitimate",
+          "sequence_start": 100
+        }
+      ],
+      "session_lifecycle_specs": [],
+      "auto_advance": true,
+      "wall_interval_s": 0.08
+    }
+  }
+]

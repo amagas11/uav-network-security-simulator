@@ -1,0 +1,16 @@
+{
+  "profile_id": "uncalibrated-static-a2a-v1",
+  "calibration_version": "baseline-v1",
+  "calibration_status": "UNCALIBRATED_BASELINE",
+  "data_source_kind": "simulation",
+  "dataset_manifest": null,
+  "parameters": [
+    {"parameter": "frequency_hz", "value": 3500000000.0, "unit": "Hz", "source": "simulation_baseline", "fitting_method": "not_fitted", "valid_range": [3400000000.0, 3600000000.0], "dataset_version": null, "calibration_version": "baseline-v1"},
+    {"parameter": "bandwidth_hz", "value": 20000000.0, "unit": "Hz", "source": "simulation_baseline", "fitting_method": "not_fitted", "valid_range": [1000000.0, 100000000.0], "dataset_version": null, "calibration_version": "baseline-v1"},
+    {"parameter": "tx_power_dbm", "value": 23.0, "unit": "dBm", "source": "simulation_baseline", "fitting_method": "not_fitted", "valid_range": [0.0, 40.0], "dataset_version": null, "calibration_version": "baseline-v1"},
+    {"parameter": "noise_power_dbm", "value": -89.0, "unit": "dBm", "source": "simulation_baseline", "fitting_method": "not_fitted", "valid_range": [-130.0, -60.0], "dataset_version": null, "calibration_version": "baseline-v1"},
+    {"parameter": "shadowing_std_db", "value": 2.0, "unit": "dB", "source": "simulation_baseline", "fitting_method": "not_fitted", "valid_range": [0.0, 20.0], "dataset_version": null, "calibration_version": "baseline-v1"},
+    {"parameter": "rician_k_db", "value": 10.0, "unit": "dB", "source": "simulation_baseline", "fitting_method": "not_fitted", "valid_range": [-20.0, 40.0], "dataset_version": null, "calibration_version": "baseline-v1"}
+  ]
+}
+

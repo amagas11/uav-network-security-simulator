@@ -1,0 +1,64 @@
+# Python environments and caches
+.venv/
+venv/
+env/
+.python_packages/
+**/__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
+
+# Frontend dependencies and build output
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/build/
+**/coverage/
+*.tsbuildinfo
+
+# Runtime and generated experiment data
+runtime/
+runtime_data/
+runtime_datasets/
+dataset/runs/
+datasets/generated/
+logs/
+tmp/
+temp/
+model_cache/
+artifacts/models/
+*.log
+*.sqlite
+*.sqlite3
+*.db
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+
+# IDE and operating-system files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.tmp
+*.temp
+Thumbs.db
+.DS_Store
+
+# Transfer packages and local verification archives
+*.zip
+*.7z
+*.rar

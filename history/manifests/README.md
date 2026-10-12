@@ -1,0 +1,1 @@
+历史校验资料，不是V20_FINAL校验基准。当前清单为根目录SOURCE_MANIFEST_V20_FINAL.json。

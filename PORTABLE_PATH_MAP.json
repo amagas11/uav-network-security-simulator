@@ -1,0 +1,13 @@
+{
+  "schema": "portable-path-map-v1",
+  "package": "无人机网络攻防仿真平台_V20_FINAL",
+  "archive_root": "无人机网络攻防仿真平台_V20_FINAL",
+  "canonical_paths": {
+    "v8_platform": "v8_platform",
+    "person_a_crypto_upstream": "person_a_crypto/upstream",
+    "person_a_integration_adapter": "v8_platform/swarm_sim/integrations/person_a",
+    "frontend": "v8_platform/UAV-project/UAV-project"
+  },
+  "person_a_upstream_source_copies": 1,
+  "runtime_paths_ascii_stable": true
+}

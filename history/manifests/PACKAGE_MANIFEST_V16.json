@@ -1,0 +1,46 @@
+{
+  "schema": "package-manifest-v1",
+  "package_name": "无人机网络攻防仿真平台_V16_FINAL",
+  "archive_root": "无人机网络攻防仿真平台_V16_FINAL",
+  "created_at_utc": "2026-10-08T03:43:39.040Z",
+  "release_description": "V16 最终前端运行、语义与局部可读性修复；视觉等待用户验收，不自行永久冻结",
+  "based_on": {
+    "package": "本任务实际上传的无人机网络攻防仿真平台_V16.zip（用户称V16(1)）",
+    "archive_sha256": "479600C4061DB26BC63CEE5F9FFF3EEF88447C0793C4DA698E6DBFFE126943C3"
+  },
+  "included_file_count": 287,
+  "canonical_paths": {
+    "frontend": "v8_platform/UAV-project/UAV-project",
+    "backend": "v8_platform",
+    "person_a": "person_a_crypto/upstream"
+  },
+  "exclusions": [
+    "node_modules",
+    "dist",
+    "__pycache__",
+    ".pytest_cache",
+    "logs",
+    "runtime data",
+    "browser evidence"
+  ],
+  "verification": {
+    "frontend_closure": "PASS (including real Pinia 409/500/recovery)",
+    "type_check": "PASS",
+    "production_build": "PASS",
+    "main_pytest": "413 passed, 2 warnings (serial rerun)",
+    "person_a_pytest": "37 passed",
+    "nine_scenarios": "PASS",
+    "desktop_viewports": [
+      "1366x900",
+      "1672x941",
+      "1920x1080"
+    ],
+    "evidence_archive": "V16_FRONTEND_POST_FIX_AUDIT.zip"
+  },
+  "boundary": {
+    "python_relative_to_v16_input": "0 differences",
+    "person_a_relative_to_v16_input": "0 differences",
+    "topology_semantics": "unchanged",
+    "scenario_parameters": "unchanged"
+  }
+}

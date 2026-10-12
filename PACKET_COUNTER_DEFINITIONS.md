@@ -1,0 +1,19 @@
+# Authoritative packet accounting
+
+API: /api/runtime.packet_accounting, schema packet-accounting-v1. Scope: SIMULATOR_GENERATION_AND_EXECUTION_ACCOUNTING. These counters are read-only observers and never enter detector or defense decisions.
+
+Business planned counts include explicit traffic specifications and automatic role traffic if enabled. Generated counts advance after actual Message creation, including later queue/key-establishment failures. Origin sent counts advance only on real first-hop air transmission. Target received means successful physical decode at final receiver, not authenticated/accepted application delivery. Multi-hop forwarding does not create another source message.
+
+Business identity: run-scoped message_id. Formal FDI preserves the original business message and injects a separately identified modified copy captured by External. Original source generation/sending and attack-copy generation/sending are separate sets; origin_business_sent_count equals unmodified_business_sent_count in this formal model. Mutations belong to derived copies, not additional legitimate source generation. The old post-HMAC sender-mutation mode retains its separate compatibility counting semantics.
+
+Formal Spoofing attempts are actual unused-original derivations, not timer ticks; generated/sent/decoded are independent stages. The copy has a new simulator message_id, but preserves wire type, payload, sequence, timestamp, session, epoch and original application tag. Only claimed_src_id changes in authenticated data. Transport sender/link/route identify External's actual emission and are not authenticated application fields. DoS uses actual quota-generated frames. Replay capture uniqueness is message_id+hop; replay emission identity distinguishes retransmission from original source generation. Eaves captures occur after real radius/quality checks; sensitive ciphertext, nonsensitive plaintext and sensitive exposure are counted separately. Active eavesdrop transmissions remain zero.
+
+Attempt units are family-specific: formal Spoofing original-frame derivations; DoS burst/emission ticks (not packets); Replay valid historical-frame retransmission attempts. Candidate checks while awaiting delay are candidate_check_count, not retransmission attempts. FDI displays eligible_count.
+
+causal_evidence is explicitly SIMULATOR_AUDIT_TRUTH, not online inference. It contains generated messages, pre-mutation signatures (SHA-256 digest only), FDI mutations, real air TX emissions, capture emission IDs, original/copy associations, receiver AUTH_RESULT observations and actual defense results. No keys or tag bytes are exposed. These observers never supply truth to detectors or defense decisions. Capture assumes the configured attacker's source-link observation capability; it is not a claim of an independently measured RF eavesdrop detector.
+
+Detection counters observe the existing detector/defense result after execution. AUTH_FAILURE/REPLAY counters require the attack target and correlated runtime attack ID. Executed requires executed is True; DROP additionally requires action=DROP_PACKET. DOS primary and secondary alarms are separated by configured target ID. This is simulator-wide execution accounting, not a claim that the online detector used truth labels.
+
+Dedup keys: bucket+counter field+message/frame/emission/request identity. Per-run structures reset with Runtime; finite demo resource limits bound memory. Frontend receives backend totals; its 600 retained events limit cannot truncate these totals. Existing GCS-local acceptedTotal remains a separate observer counter and includes security/control traffic, not flood packet quantity.
+
+Implementation: swarm_sim/packet_accounting.py; observation hooks in runtime.py and attacks.py. HMAC, replay detection order, receiver-total detector, defense policy, evaluation and Person-A are unchanged.

@@ -1,0 +1,3347 @@
+{
+  "schema_version": "3.2.0",
+  "contract_status": "V7_FINAL_FUNCTIONAL_CLOSURE",
+  "encoding": "UTF-8",
+  "format": "JSONL_ONE_OBJECT_PER_LINE",
+  "time_field": {
+    "name": "sim_time_s",
+    "unit": "s"
+  },
+  "traffic_statistics": {
+    "scope": "observer-local RX_SUCCESS/RX_FAILURE",
+    "rolling_window_source": "runs.run_config.traffic_statistics_window_s",
+    "default_rolling_window_s": 1.0,
+    "first_inter_arrival_is_null": true
+  },
+  "event_types": [
+    "TX",
+    "RX_SUCCESS",
+    "RX_FAILURE",
+    "PHY_SAMPLE",
+    "QUEUE_SAMPLE",
+    "NODE_STATE",
+    "TOPOLOGY_UPDATE",
+    "AUTH_RESULT",
+    "MODEL_RESULT",
+    "DEFENSE_RESULT"
+  ],
+  "observer_roles": [
+    "GCS",
+    "LEADER",
+    "FOLLOWER",
+    "EXTERNAL"
+  ],
+  "model_deployment_observer_roles": [
+    "GCS",
+    "LEADER",
+    "FOLLOWER"
+  ],
+  "attack_subtypes": {
+    "SPOOFING": [
+      "UNKNOWN_ID",
+      "KNOWN_ID_CONFLICT"
+    ],
+    "DOS": [
+      "FLOODING"
+    ],
+    "REPLAY": [
+      "IMMEDIATE_REPLAY",
+      "DELAYED_REPLAY",
+      "OLD_SESSION_REPLAY",
+      "CAPTURE_AND_REPLAY"
+    ],
+    "FDI": [
+      "COMMAND_REPLACEMENT",
+      "TELEMETRY_ABRUPT_CHANGE",
+      "TELEMETRY_GRADUAL_DRIFT",
+      "OUT_OF_RANGE_VALUE",
+      "LOGICAL_INCONSISTENCY"
+    ],
+    "EAVESDROPPING": [
+      "PASSIVE_CAPTURE",
+      "NONSENSITIVE_PLAINTEXT_CONTROL",
+      "CIPHERTEXT_ONLY",
+      "PLAINTEXT_EXPOSURE"
+    ]
+  },
+  "scenario_parameter_contracts": {
+    "semantics": "Unknown parameter names are invalid at all formal entrypoints. Every accepted parameter is consumed by the runtime mechanism.",
+    "attack": {
+      "SPOOFING/UNKNOWN_ID": {
+        "claimed_src_id": "integer?"
+      },
+      "SPOOFING/KNOWN_ID_CONFLICT": {
+        "claimed_src_id": "integer?"
+      },
+      "EAVESDROPPING/PASSIVE_CAPTURE": {
+        "receiver_radius_m": "number>0?"
+      },
+      "EAVESDROPPING/NONSENSITIVE_PLAINTEXT_CONTROL": {
+        "receiver_radius_m": "number>0?"
+      },
+      "EAVESDROPPING/CIPHERTEXT_ONLY": {
+        "receiver_radius_m": "number>0?"
+      },
+      "EAVESDROPPING/PLAINTEXT_EXPOSURE": {
+        "receiver_radius_m": "number>0?"
+      },
+      "DOS/FLOODING": {
+        "packet_type": "non-empty-string?",
+        "packet_size_bytes": "integer>=32?",
+        "target_packet_size_bytes": "integer>=32?"
+      },
+      "FDI/COMMAND_REPLACEMENT": {
+        "replacement": "object?"
+      },
+      "FDI/TELEMETRY_ABRUPT_CHANGE": {
+        "field": "non-empty-string?",
+        "replacement": "number?",
+        "absolute_offset": "number?"
+      },
+      "FDI/TELEMETRY_GRADUAL_DRIFT": {
+        "field": "non-empty-string?",
+        "delta_per_step": "number?",
+        "delta_per_tick": "number?"
+      },
+      "FDI/OUT_OF_RANGE_VALUE": {
+        "field": "non-empty-string?",
+        "value": "number?"
+      },
+      "FDI/LOGICAL_INCONSISTENCY": {
+        "altitude_m": "number?"
+      },
+      "REPLAY/IMMEDIATE_REPLAY": {
+        "max_capture_age_s": "number>=0?",
+        "repeat": "boolean?"
+      },
+      "REPLAY/CAPTURE_AND_REPLAY": {
+        "max_capture_age_s": "number>=0?",
+        "repeat": "boolean?"
+      },
+      "REPLAY/DELAYED_REPLAY": {
+        "delay_s": "number>=0?",
+        "repeat": "boolean?"
+      },
+      "REPLAY/OLD_SESSION_REPLAY": {
+        "stale_session_id": "non-empty-string?",
+        "repeat": "boolean?"
+      }
+    },
+    "normal": {
+      "NORMAL_LOW_SNR": {
+        "attenuation_db": "number>=0?"
+      },
+      "NORMAL_PACKET_LOSS": {
+        "loss_probability": "number[0,1]?"
+      },
+      "NORMAL_TRAFFIC_BURST": {
+        "source_node_id": "integer?",
+        "packet_rate_pps": "number>0?",
+        "packet_type": "non-empty-string?",
+        "packet_size_bytes": "integer>=32?",
+        "target_packet_size_bytes": "integer>=32?"
+      },
+      "NORMAL_OUT_OF_ORDER": {
+        "source_node_id": "integer?",
+        "sequence_numbers": "array<integer>?",
+        "session_id": "non-empty-string?",
+        "packet_type": "non-empty-string?"
+      },
+      "NORMAL_STATE_CHANGE": {
+        "battery_pct": "number[0,100]?",
+        "flight_state": "non-empty-string?",
+        "position_xyz_m": "array<number>[3]?"
+      },
+      "NORMAL_CONGESTION": {
+        "source_node_id": "integer?",
+        "packet_rate_pps": "number>0?",
+        "packet_type": "non-empty-string?",
+        "packet_size_bytes": "integer>=32?",
+        "target_packet_size_bytes": "integer>=32?",
+        "busy_ratio_addition": "number[0,1]?"
+      }
+    },
+    "business_traffic_spec": {
+      "source_node_id": "integer!",
+      "target_node_id": "integer!",
+      "packet_type": "non-empty-string!",
+      "start_s": "number>=0!",
+      "payload": "object!",
+      "interval_s": "number>0?",
+      "count": "integer>=1?",
+      "sensitive": "boolean?",
+      "encrypt": "boolean|null?",
+      "session_id": "non-empty-string|null?",
+      "sequence_start": "integer|null?",
+      "traffic_id": "non-empty-string|null?"
+    },
+    "session_lifecycle_spec": {
+      "sender_node_id": "integer!",
+      "receiver_node_id": "integer!",
+      "rotate_at_s": "number>=0!",
+      "old_session_id": "non-empty-string!",
+      "new_session_id": "non-empty-string!",
+      "key_epoch": "integer|string|null?",
+      "sequence_namespace": "integer|null?",
+      "lifecycle_id": "non-empty-string|null?"
+    }
+  },
+  "normal_disturbance_types": [
+    "NORMAL_LOW_SNR",
+    "NORMAL_PACKET_LOSS",
+    "NORMAL_TRAFFIC_BURST",
+    "NORMAL_OUT_OF_ORDER",
+    "NORMAL_STATE_CHANGE",
+    "NORMAL_CONGESTION"
+  ],
+  "data_source_kinds": [
+    "simulation",
+    "calibrated_simulation",
+    "real_measurement",
+    "augmented_real"
+  ],
+  "auth_results": [
+    "PASS",
+    "FAIL",
+    "UNAVAILABLE"
+  ],
+  "replay_results": [
+    "PASS",
+    "DUPLICATE",
+    "STALE",
+    "STALE_TIMESTAMP",
+    "INVALID_TIMESTAMP",
+    "WRONG_SESSION",
+    "UNAVAILABLE"
+  ],
+  "key_states": [
+    "AVAILABLE",
+    "EXPIRED",
+    "MISSING",
+    "UPDATING",
+    "FAILED",
+    "UNAVAILABLE"
+  ],
+  "missing": "Use JSON null plus availability/missing_reason; zero is a measured value.",
+  "truth_boundary": {
+    "online_file": "events.jsonl",
+    "truth_file": "labels.jsonl",
+    "forbidden_online_fields": [
+      "is_attacked",
+      "attack_type",
+      "attack_family",
+      "attack_subtype",
+      "attacker_node_id",
+      "actual_transmitter_id",
+      "original_value",
+      "modified_value",
+      "attack_engine_jamming_power",
+      "attack_success",
+      "future_event",
+      "future_log",
+      "normal_disturbance",
+      "normal_disturbance_type"
+    ],
+    "forbidden_raw_categorical_proxies": [
+      "FLOOD",
+      "LEGITIMATE_BURST",
+      "NORMAL_BURST",
+      "SPOOFING",
+      "EAVESDROPPING",
+      "DOS",
+      "FLOODING",
+      "JAMMING",
+      "FDI",
+      "REPLAY",
+      "NORMAL_LOW_SNR",
+      "NORMAL_PACKET_LOSS",
+      "NORMAL_TRAFFIC_BURST",
+      "NORMAL_OUT_OF_ORDER",
+      "NORMAL_STATE_CHANGE",
+      "NORMAL_CONGESTION"
+    ]
+  },
+  "rf_sample_contract": {
+    "sample_files_are_external": true,
+    "no_synthetic_iq_is_included": true,
+    "manifest_may_be_empty": true,
+    "event_reference_semantics": "rf_sample_ref identifies the current receiver/current hop sample_id only"
+  },
+  "objects": {
+    "runs": {
+      "description": "One deterministic run record in runs.jsonl.",
+      "fields": {
+        "schema_version": {
+          "name": "schema_version",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "3.2.0"
+          ],
+          "description": "Dataset contract version.",
+          "semantic_id": "run.schema_version"
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Unique run identifier.",
+          "semantic_id": "run.identity"
+        },
+        "seed": {
+          "name": "seed",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "description": "Root deterministic RNG seed.",
+          "semantic_id": "run.random_seed"
+        },
+        "duration_s": {
+          "name": "duration_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "exclusiveMinimum": 0,
+          "description": "Simulation duration.",
+          "semantic_id": "run.duration"
+        },
+        "step_s": {
+          "name": "step_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "exclusiveMinimum": 0,
+          "description": "Simulation clock step.",
+          "semantic_id": "run.clock_step"
+        },
+        "node_count": {
+          "name": "node_count",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "unit": "node",
+          "minimum": 2,
+          "description": "Number of legitimate run nodes.",
+          "semantic_id": "run.node_count"
+        },
+        "node_roles": {
+          "name": "node_roles",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "description": "All observed participant roles, including declared EXTERNAL participants.",
+          "semantic_id": "run.node_roles"
+        },
+        "legitimate_node_count": {
+          "name": "legitimate_node_count",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "minimum": 2,
+          "description": "Count of non-EXTERNAL platform nodes; equal to node_count.",
+          "semantic_id": "run.legitimate_node_count"
+        },
+        "legitimate_node_roles": {
+          "name": "legitimate_node_roles",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "description": "Role map for legitimate GCS/Leader/Follower nodes only.",
+          "semantic_id": "run.legitimate_node_roles"
+        },
+        "external_participants": {
+          "name": "external_participants",
+          "type": "array<object>",
+          "required": true,
+          "nullable": false,
+          "item_ref": "ExternalParticipant",
+          "description": "Truth/provenance declaration of simulated external participants, excluded from node_count.",
+          "semantic_id": "run.external_participants"
+        },
+        "start_sim_time_s": {
+          "name": "start_sim_time_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "description": "Logical run start.",
+          "semantic_id": "run.start_time"
+        },
+        "data_source": {
+          "name": "data_source",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "DataSourceProvenance",
+          "description": "Data and calibration provenance.",
+          "semantic_id": "run.data_source"
+        },
+        "profiles": {
+          "name": "profiles",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "RunProfiles",
+          "description": "Channel/traffic/experiment plan IDs.",
+          "semantic_id": "run.profiles"
+        },
+        "software_version": {
+          "name": "software_version",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "pattern": "^platform-v7(?:\\+[-A-Za-z0-9.]+)?$",
+          "description": "Producer software version, independent of schema version.",
+          "semantic_id": "run.software_version"
+        },
+        "calibration_status": {
+          "name": "calibration_status",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Calibration evidence status.",
+          "semantic_id": "run.calibration_status"
+        },
+        "config_fingerprint": {
+          "name": "config_fingerprint",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "SHA-256 of RunConfig, attack plan, normal disturbance plan, calibration/profile references, software and schema version.",
+          "semantic_id": "run.semantic_config_fingerprint"
+        },
+        "run_config": {
+          "name": "run_config",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "RunConfig",
+          "description": "Complete secret-free RunConfig used by this run.",
+          "semantic_id": "run.full_config"
+        },
+        "attack_plan": {
+          "name": "attack_plan",
+          "type": "array<object>",
+          "required": true,
+          "nullable": false,
+          "item_ref": "AttackPlan",
+          "description": "Complete scheduled attacks including parameters; empty for normal-only runs.",
+          "semantic_id": "run.attack_plan"
+        },
+        "requested_attack_plan": {
+          "name": "requested_attack_plan",
+          "type": "array<object>",
+          "required": true,
+          "nullable": false,
+          "description": "Caller requests before runtime default resolution; attack_plan is the executed/resolved truth.",
+          "semantic_id": "run.requested_attack_plan"
+        },
+        "normal_disturbance_plan": {
+          "name": "normal_disturbance_plan",
+          "type": "array<object>",
+          "required": true,
+          "nullable": false,
+          "item_ref": "NormalDisturbancePlan",
+          "description": "Complete normal-control plan; never attack truth labels.",
+          "semantic_id": "run.normal_disturbance_plan"
+        },
+        "calibration_profile": {
+          "name": "calibration_profile",
+          "type": "object",
+          "required": false,
+          "nullable": true,
+          "object_ref": "CalibrationProfile",
+          "description": "Complete validated calibration profile used by this run, or null for the uncalibrated baseline.",
+          "semantic_id": "run.calibration_profile"
+        },
+        "dataset_maturity": {
+          "name": "dataset_maturity",
+          "type": "string",
+          "required": false,
+          "nullable": false,
+          "enum": [
+            "DEVELOPMENT",
+            "PRELIMINARY",
+            "FORMAL"
+          ],
+          "description": "Declared dataset maturity; mock providers cannot produce FORMAL data.",
+          "semantic_id": "run.dataset_maturity"
+        },
+        "security_providers": {
+          "name": "security_providers",
+          "type": "object",
+          "required": false,
+          "nullable": false,
+          "object_ref": "SecurityProviders",
+          "description": "Non-secret provider provenance.",
+          "semantic_id": "run.security_providers"
+        },
+        "application_hmac": {
+          "name": "application_hmac",
+          "type": "object",
+          "required": false,
+          "nullable": false,
+          "description": "Secret-free application HMAC algorithm, scope, tag length and covered-field provenance.",
+          "semantic_id": "run.application_hmac"
+        },
+        "security_provider_maturity": {
+          "name": "security_provider_maturity",
+          "type": "string",
+          "required": false,
+          "nullable": false,
+          "enum": [
+            "TEST",
+            "FORMAL"
+          ],
+          "description": "Aggregate maturity of active security providers.",
+          "semantic_id": "run.security_provider_maturity"
+        },
+        "calibration_maturity": {
+          "name": "calibration_maturity",
+          "type": "string",
+          "required": false,
+          "nullable": false,
+          "enum": [
+            "UNCALIBRATED",
+            "TEST",
+            "DEVELOPMENT",
+            "PRELIMINARY",
+            "APPROVED"
+          ],
+          "description": "Calibration evidence maturity; TEST and DEVELOPMENT fixtures are never formal evidence.",
+          "semantic_id": "run.calibration_maturity"
+        },
+        "experiment_readiness": {
+          "name": "experiment_readiness",
+          "type": "string",
+          "required": false,
+          "nullable": false,
+          "enum": [
+            "READY",
+            "BLOCKED_EXTERNAL"
+          ],
+          "description": "Backward-compatible final formal integrated experiment readiness; never B-software-only readiness.",
+          "semantic_id": "run.experiment_readiness"
+        },
+        "readiness_components": {
+          "name": "readiness_components",
+          "type": "object",
+          "required": false,
+          "nullable": false,
+          "description": "Layered B software, external asset, dataset and final experiment readiness.",
+          "semantic_id": "run.readiness_components"
+        },
+        "readiness_blockers": {
+          "name": "readiness_blockers",
+          "type": "array<string>",
+          "required": false,
+          "nullable": false,
+          "description": "Explicit blockers preventing a final formal integrated experiment.",
+          "semantic_id": "run.readiness_blockers"
+        },
+        "dataset_readiness": {
+          "name": "dataset_readiness",
+          "type": "string",
+          "required": false,
+          "nullable": false,
+          "enum": [
+            "READY_FOR_C",
+            "READY_FOR_C_DEVELOPMENT"
+          ],
+          "description": "Dataset generation readiness, intentionally independent of trained C model availability.",
+          "semantic_id": "run.dataset_readiness"
+        },
+        "model_assets": {
+          "name": "model_assets",
+          "type": "object",
+          "required": false,
+          "nullable": false,
+          "description": "Run-level model slot/name/version/status provenance, including models that emit no result.",
+          "semantic_id": "run.model_assets"
+        },
+        "calibration_runtime_controls": {
+          "name": "calibration_runtime_controls",
+          "type": "object",
+          "required": false,
+          "nullable": true,
+          "description": "Exact numeric calibration controls applied by PersistentPhyModel.",
+          "semantic_id": "run.calibration_runtime_controls"
+        },
+        "calibration_parameter_semantics": {
+          "name": "calibration_parameter_semantics",
+          "type": "object",
+          "required": false,
+          "nullable": true,
+          "description": "Per-parameter RUNTIME_CONTROL versus DESCRIPTIVE_VALIDATION_TARGET roles.",
+          "semantic_id": "run.calibration_parameter_semantics"
+        },
+        "probe_profile": {
+          "name": "probe_profile",
+          "type": "string",
+          "required": false,
+          "nullable": false,
+          "enum": [
+            "V8_DEFAULT",
+            "PERSON_A_V01_COMPAT_TEST"
+          ],
+          "description": "Probe statistics profile. PERSON_A_V01_COMPAT_TEST is TEST_ONLY and blocks formal experiment readiness.",
+          "semantic_id": "run.probe_profile"
+        },
+        "scenario_plan": {
+          "name": "scenario_plan",
+          "type": "object",
+          "required": false,
+          "nullable": false,
+          "description": "Resolved business-traffic and legitimate session-lifecycle plan.",
+          "semantic_id": "run.scenario_plan"
+        },
+        "identifier_provenance": {
+          "name": "identifier_provenance",
+          "type": "object",
+          "required": false,
+          "nullable": false,
+          "description": "Offline mapping/provenance for opaque online identifiers; consumers must not treat IDs as semantic features.",
+          "semantic_id": "run.identifier_provenance"
+        }
+      }
+    },
+    "ExternalParticipant": {
+      "description": "A non-legitimate simulated participant declared separately from node_count.",
+      "fields": {
+        "node_id": {
+          "name": "node_id",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "description": "External participant ID.",
+          "semantic_id": "external.node_id"
+        },
+        "role": {
+          "name": "role",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "EXTERNAL"
+          ],
+          "description": "External role marker.",
+          "semantic_id": "external.role"
+        }
+      }
+    },
+    "SecurityProviders": {
+      "description": "Security provider provenance without key or credential material.",
+      "fields": {
+        "key_provider": {
+          "name": "key_provider",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "ProviderProvenance",
+          "description": "Key provider.",
+          "semantic_id": "provider.key"
+        },
+        "crypto_provider": {
+          "name": "crypto_provider",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "ProviderProvenance",
+          "description": "Crypto provider.",
+          "semantic_id": "provider.crypto"
+        },
+        "terminal_credential_provider": {
+          "name": "terminal_credential_provider",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "ProviderProvenance",
+          "description": "Terminal credential provider.",
+          "semantic_id": "provider.terminal"
+        }
+      }
+    },
+    "ProviderProvenance": {
+      "description": "Public implementation identity and status.",
+      "fields": {
+        "name": {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Provider class/name.",
+          "semantic_id": "provider.name"
+        },
+        "version": {
+          "name": "version",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Provider version.",
+          "semantic_id": "provider.version"
+        },
+        "status": {
+          "name": "status",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "FORMAL, test-only, simulated, unavailable, or interface-ready status.",
+          "semantic_id": "provider.status"
+        }
+      }
+    },
+    "DataSourceProvenance": {
+      "description": "Calibration/data origin for a run.",
+      "fields": {
+        "kind": {
+          "name": "kind",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "simulation",
+            "calibrated_simulation",
+            "real_measurement",
+            "augmented_real"
+          ],
+          "description": "Source category.",
+          "semantic_id": "provenance.kind"
+        },
+        "source_dataset_version": {
+          "name": "source_dataset_version",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Source dataset version when one was loaded.",
+          "semantic_id": "provenance.dataset_version"
+        },
+        "calibration_version": {
+          "name": "calibration_version",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Calibration profile version.",
+          "semantic_id": "provenance.calibration_version"
+        }
+      }
+    },
+    "CalibrationDatasetManifest": {
+      "description": "Licensed/provenanced measurement dataset used to fit a calibration profile.",
+      "fields": {
+        "dataset_id": {
+          "name": "dataset_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Stable source dataset identity.",
+          "semantic_id": "calibration.dataset.id"
+        },
+        "version": {
+          "name": "version",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Source dataset version.",
+          "semantic_id": "calibration.dataset.version"
+        },
+        "source_kind": {
+          "name": "source_kind",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "simulation",
+            "real_measurement",
+            "augmented_real"
+          ],
+          "description": "Origin category.",
+          "semantic_id": "calibration.dataset.source_kind"
+        },
+        "source_uri": {
+          "name": "source_uri",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Non-secret licensed source reference.",
+          "semantic_id": "calibration.dataset.source_uri"
+        },
+        "license": {
+          "name": "license",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Usage/license declaration.",
+          "semantic_id": "calibration.dataset.license"
+        },
+        "sha256": {
+          "name": "sha256",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "pattern": "^[0-9a-fA-F]{64}$",
+          "description": "Source artifact SHA-256.",
+          "semantic_id": "calibration.dataset.sha256"
+        },
+        "fields": {
+          "name": "fields",
+          "type": "array<string>",
+          "required": true,
+          "nullable": false,
+          "description": "Available normalized measurement fields.",
+          "semantic_id": "calibration.dataset.fields"
+        },
+        "missing_fields": {
+          "name": "missing_fields",
+          "type": "array<string>",
+          "required": true,
+          "nullable": false,
+          "description": "Explicitly unavailable expected fields.",
+          "semantic_id": "calibration.dataset.missing_fields"
+        },
+        "notes": {
+          "name": "notes",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Optional provenance notes.",
+          "semantic_id": "calibration.dataset.notes"
+        }
+      }
+    },
+    "CalibrationParameter": {
+      "description": "One transparent fitted PHY/service parameter.",
+      "fields": {
+        "parameter": {
+          "name": "parameter",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Parameter name.",
+          "semantic_id": "calibration.parameter.name"
+        },
+        "value": {
+          "name": "value",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "description": "Fitted numeric value.",
+          "semantic_id": "calibration.parameter.value"
+        },
+        "unit": {
+          "name": "unit",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Physical unit.",
+          "semantic_id": "calibration.parameter.unit"
+        },
+        "source": {
+          "name": "source",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Dataset/source identity.",
+          "semantic_id": "calibration.parameter.source"
+        },
+        "fitting_method": {
+          "name": "fitting_method",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Explainable fitting method.",
+          "semantic_id": "calibration.parameter.method"
+        },
+        "valid_range": {
+          "name": "valid_range",
+          "type": "array<number>",
+          "required": true,
+          "nullable": true,
+          "description": "Inclusive supported range, when known.",
+          "semantic_id": "calibration.parameter.valid_range"
+        },
+        "dataset_version": {
+          "name": "dataset_version",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Source dataset version.",
+          "semantic_id": "calibration.parameter.dataset_version"
+        },
+        "calibration_version": {
+          "name": "calibration_version",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Fitter/profile version.",
+          "semantic_id": "calibration.parameter.version"
+        }
+      }
+    },
+    "CalibrationProfile": {
+      "description": "Validated calibration artifact consumed identically by Runtime, Batch, API, and RL.",
+      "fields": {
+        "profile_id": {
+          "name": "profile_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Stable profile identity.",
+          "semantic_id": "calibration.profile.id"
+        },
+        "calibration_version": {
+          "name": "calibration_version",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Calibration implementation/version.",
+          "semantic_id": "calibration.profile.version"
+        },
+        "calibration_status": {
+          "name": "calibration_status",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Evidence status, not a claim of formal approval.",
+          "semantic_id": "calibration.profile.status"
+        },
+        "data_source_kind": {
+          "name": "data_source_kind",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "simulation",
+            "calibrated_simulation",
+            "real_measurement",
+            "augmented_real"
+          ],
+          "description": "Runtime data source kind.",
+          "semantic_id": "calibration.profile.data_source"
+        },
+        "parameters": {
+          "name": "parameters",
+          "type": "array<object>",
+          "required": true,
+          "nullable": false,
+          "item_ref": "CalibrationParameter",
+          "description": "Fitted parameters.",
+          "semantic_id": "calibration.profile.parameters"
+        },
+        "dataset_manifest": {
+          "name": "dataset_manifest",
+          "type": "object",
+          "required": true,
+          "nullable": true,
+          "object_ref": "CalibrationDatasetManifest",
+          "description": "Verified fitting input provenance.",
+          "semantic_id": "calibration.profile.dataset"
+        },
+        "sample_count": {
+          "name": "sample_count",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "minimum": 0,
+          "description": "Normalized records used.",
+          "semantic_id": "calibration.profile.sample_count"
+        },
+        "method": {
+          "name": "method",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Explainable fitting algorithm.",
+          "semantic_id": "calibration.profile.method"
+        },
+        "quality": {
+          "name": "quality",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "description": "Availability and descriptive quality evidence.",
+          "semantic_id": "calibration.profile.quality"
+        },
+        "warnings": {
+          "name": "warnings",
+          "type": "array<string>",
+          "required": true,
+          "nullable": false,
+          "description": "Missing/quality warnings.",
+          "semantic_id": "calibration.profile.warnings"
+        },
+        "created_from": {
+          "name": "created_from",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "description": "Source hashes and identifiers.",
+          "semantic_id": "calibration.profile.created_from"
+        },
+        "profile_maturity": {
+          "name": "profile_maturity",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "TEST",
+            "DEVELOPMENT",
+            "PRELIMINARY",
+            "APPROVED"
+          ],
+          "description": "Calibration evidence maturity.",
+          "semantic_id": "calibration.profile.maturity"
+        },
+        "profile_hash": {
+          "name": "profile_hash",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Canonical profile SHA-256.",
+          "semantic_id": "calibration.profile.hash"
+        }
+      }
+    },
+    "RunProfiles": {
+      "description": "Stable profile and plan fingerprints.",
+      "fields": {
+        "channel_profile_id": {
+          "name": "channel_profile_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Channel/calibration profile.",
+          "semantic_id": "profiles.channel"
+        },
+        "traffic_profile_id": {
+          "name": "traffic_profile_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Provenance-only traffic profile reference until a loader exists.",
+          "semantic_id": "profiles.traffic_metadata"
+        },
+        "attack_plan_id": {
+          "name": "attack_plan_id",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Stable plan fingerprint; null only when no attack exists.",
+          "semantic_id": "profiles.attack_plan"
+        },
+        "normal_disturbance_plan_id": {
+          "name": "normal_disturbance_plan_id",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Stable normal plan fingerprint; null only when no disturbance exists.",
+          "semantic_id": "profiles.normal_plan"
+        },
+        "calibration_profile_hash": {
+          "name": "calibration_profile_hash",
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Canonical hash of the loaded calibration profile.",
+          "semantic_id": "profiles.calibration_hash"
+        }
+      }
+    },
+    "RunConfig": {
+      "description": "Complete secret-free runtime configuration.",
+      "fields": {
+        "seed": {
+          "name": "seed",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "description": "RNG seed.",
+          "semantic_id": "config.seed"
+        },
+        "duration_s": {
+          "name": "duration_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "exclusiveMinimum": 0,
+          "description": "Run duration.",
+          "semantic_id": "config.duration"
+        },
+        "step_s": {
+          "name": "step_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "exclusiveMinimum": 0,
+          "description": "Simulation tick.",
+          "semantic_id": "config.step"
+        },
+        "node_count": {
+          "name": "node_count",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "minimum": 2,
+          "description": "Legitimate node count.",
+          "semantic_id": "config.node_count"
+        },
+        "node_roles": {
+          "name": "node_roles",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "description": "Resolved node role map.",
+          "semantic_id": "config.node_roles"
+        },
+        "auto_traffic": {
+          "name": "auto_traffic",
+          "type": "boolean",
+          "required": true,
+          "nullable": false,
+          "description": "Enable role traffic generator.",
+          "semantic_id": "config.auto_traffic"
+        },
+        "encrypt_sensitive": {
+          "name": "encrypt_sensitive",
+          "type": "boolean",
+          "required": true,
+          "nullable": false,
+          "description": "Protect sensitive payloads.",
+          "semantic_id": "config.encrypt_sensitive"
+        },
+        "queue_capacity": {
+          "name": "queue_capacity",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "minimum": 1,
+          "description": "Per-node queue capacity.",
+          "semantic_id": "config.queue_capacity"
+        },
+        "tx_service_per_step": {
+          "name": "tx_service_per_step",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "minimum": 1,
+          "description": "TX service budget.",
+          "semantic_id": "config.tx_service"
+        },
+        "rx_service_per_step": {
+          "name": "rx_service_per_step",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "minimum": 1,
+          "description": "RX service budget.",
+          "semantic_id": "config.rx_service"
+        },
+        "phy_sample_interval_s": {
+          "name": "phy_sample_interval_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "exclusiveMinimum": 0,
+          "description": "Passive PHY sample interval.",
+          "semantic_id": "config.phy_interval"
+        },
+        "traffic_statistics_window_s": {
+          "name": "traffic_statistics_window_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "exclusiveMinimum": 0,
+          "description": "Observer-local rolling statistic window.",
+          "semantic_id": "config.traffic_window"
+        },
+        "flooding_packet_rate_threshold_pps": {
+          "name": "flooding_packet_rate_threshold_pps",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "packet/s",
+          "exclusiveMinimum": 0,
+          "description": "Receiver-total flooding alarm threshold.",
+          "semantic_id": "config.flooding_receiver_rate_threshold"
+        },
+        "replay_timestamp_freshness_s": {
+          "name": "replay_timestamp_freshness_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "exclusiveMinimum": 0,
+          "description": "Maximum accepted application timestamp age before session/sequence replay checks.",
+          "semantic_id": "config.replay_timestamp_freshness"
+        },
+        "replay_reorder_window_size": {
+          "name": "replay_reorder_window_size",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "minimum": 1,
+          "description": "Legal replay/reorder sequence window.",
+          "semantic_id": "config.replay_window"
+        },
+        "security_summary_window_s": {
+          "name": "security_summary_window_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "exclusiveMinimum": 0,
+          "description": "Leader aggregation window.",
+          "semantic_id": "config.security_summary_window"
+        },
+        "decision_step_s": {
+          "name": "decision_step_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "exclusiveMinimum": 0,
+          "description": "RL action evaluation interval.",
+          "semantic_id": "config.decision_step"
+        },
+        "frequency_hz": {
+          "name": "frequency_hz",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "Hz",
+          "exclusiveMinimum": 0,
+          "description": "Configured carrier frequency before runtime channel actions.",
+          "semantic_id": "config.frequency"
+        },
+        "bandwidth_hz": {
+          "name": "bandwidth_hz",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "Hz",
+          "exclusiveMinimum": 0,
+          "description": "Configured channel bandwidth.",
+          "semantic_id": "config.bandwidth"
+        },
+        "channel_profile_id": {
+          "name": "channel_profile_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Channel profile reference.",
+          "semantic_id": "config.channel_profile"
+        },
+        "traffic_profile_id": {
+          "name": "traffic_profile_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Provenance-only traffic profile reference until a registry/loader is installed; excluded from semantic fingerprint.",
+          "semantic_id": "config.traffic_profile_metadata"
+        },
+        "software_version": {
+          "name": "software_version",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "pattern": "^platform-v7(?:\\+[-A-Za-z0-9.]+)?$",
+          "description": "Producer software.",
+          "semantic_id": "config.software_version"
+        },
+        "data_source_kind": {
+          "name": "data_source_kind",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "simulation",
+            "calibrated_simulation",
+            "real_measurement",
+            "augmented_real"
+          ],
+          "description": "Source kind.",
+          "semantic_id": "config.source_kind"
+        },
+        "calibration_status": {
+          "name": "calibration_status",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Calibration status.",
+          "semantic_id": "config.calibration_status"
+        },
+        "source_dataset_version": {
+          "name": "source_dataset_version",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Loaded source dataset version.",
+          "semantic_id": "config.source_dataset_version"
+        },
+        "calibration_version": {
+          "name": "calibration_version",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Calibration version.",
+          "semantic_id": "config.calibration_version"
+        },
+        "attack_specs": {
+          "name": "attack_specs",
+          "type": "array<object>",
+          "required": true,
+          "nullable": false,
+          "description": "Input attack specifications.",
+          "semantic_id": "config.attack_specs"
+        },
+        "normal_disturbance_specs": {
+          "name": "normal_disturbance_specs",
+          "type": "array<object>",
+          "required": true,
+          "nullable": false,
+          "description": "Input normal-control specifications.",
+          "semantic_id": "config.normal_specs"
+        },
+        "traffic_specs": {
+          "name": "traffic_specs",
+          "type": "array<object>",
+          "required": true,
+          "nullable": false,
+          "description": "Strict config-driven legitimate business traffic used consistently by runtime, batch, API, and RL.",
+          "semantic_id": "config.business_traffic_specs"
+        },
+        "session_lifecycle_specs": {
+          "name": "session_lifecycle_specs",
+          "type": "array<object>",
+          "required": true,
+          "nullable": false,
+          "description": "Legitimate security-session rotations applied before old-session replay.",
+          "semantic_id": "config.session_lifecycle_specs"
+        },
+        "allow_external_model_observer": {
+          "name": "allow_external_model_observer",
+          "type": "boolean",
+          "required": true,
+          "nullable": false,
+          "description": "Research-only override; false for the frozen C online stream.",
+          "semantic_id": "config.external_model_observer"
+        },
+        "episode_phases": {
+          "name": "episode_phases",
+          "type": "object",
+          "required": true,
+          "nullable": true,
+          "description": "Evaluator/provenance metadata only; excluded from the semantic fingerprint and online state.",
+          "semantic_id": "config.episode_phases_metadata"
+        },
+        "model_recommendation_confidence_threshold": {
+          "name": "model_recommendation_confidence_threshold",
+          "type": "number",
+          "required": false,
+          "nullable": false,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "B-side model recommendation confidence gate.",
+          "semantic_id": "config.model_confidence_gate"
+        },
+        "model_recommendation_quality_threshold": {
+          "name": "model_recommendation_quality_threshold",
+          "type": "number",
+          "required": false,
+          "nullable": false,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "B-side model recommendation quality gate.",
+          "semantic_id": "config.model_quality_gate"
+        },
+        "model_inference_timeout_ms": {
+          "name": "model_inference_timeout_ms",
+          "type": "number",
+          "required": false,
+          "nullable": false,
+          "unit": "ms",
+          "exclusiveMinimum": 0,
+          "description": "Wall-clock safety deadline for each external model call; never changes simulation time.",
+          "semantic_id": "config.model_timeout"
+        },
+        "dataset_maturity": {
+          "name": "dataset_maturity",
+          "type": "string",
+          "required": false,
+          "nullable": false,
+          "enum": [
+            "DEVELOPMENT",
+            "PRELIMINARY",
+            "FORMAL"
+          ],
+          "description": "Requested dataset maturity.",
+          "semantic_id": "config.dataset_maturity"
+        },
+        "require_formal_security": {
+          "name": "require_formal_security",
+          "type": "boolean",
+          "required": false,
+          "nullable": false,
+          "description": "Reject execution unless all security providers are formal.",
+          "semantic_id": "config.require_formal_security"
+        }
+      }
+    },
+    "AttackPlan": {
+      "description": "Complete scheduled attack episode.",
+      "fields": {
+        "attack_family": {
+          "name": "attack_family",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "SPOOFING",
+            "EAVESDROPPING",
+            "DOS",
+            "FDI",
+            "REPLAY"
+          ],
+          "description": "Attack family.",
+          "semantic_id": "plan.attack_family"
+        },
+        "attack_subtype": {
+          "name": "attack_subtype",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "UNKNOWN_ID",
+            "KNOWN_ID_CONFLICT",
+            "PASSIVE_CAPTURE",
+            "NONSENSITIVE_PLAINTEXT_CONTROL",
+            "CIPHERTEXT_ONLY",
+            "PLAINTEXT_EXPOSURE",
+            "FLOODING",
+            "COMMAND_REPLACEMENT",
+            "TELEMETRY_ABRUPT_CHANGE",
+            "TELEMETRY_GRADUAL_DRIFT",
+            "OUT_OF_RANGE_VALUE",
+            "LOGICAL_INCONSISTENCY",
+            "IMMEDIATE_REPLAY",
+            "DELAYED_REPLAY",
+            "OLD_SESSION_REPLAY",
+            "CAPTURE_AND_REPLAY"
+          ],
+          "description": "Mechanism subtype.",
+          "semantic_id": "plan.attack_subtype"
+        },
+        "scheduled_start_s": {
+          "name": "scheduled_start_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "minimum": 0,
+          "description": "Schedule time.",
+          "semantic_id": "plan.scheduled_start"
+        },
+        "impact_start_s": {
+          "name": "impact_start_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "minimum": 0,
+          "description": "Impact time.",
+          "semantic_id": "plan.impact_start"
+        },
+        "end_s": {
+          "name": "end_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "exclusiveMinimum": 0,
+          "description": "End time.",
+          "semantic_id": "plan.end"
+        },
+        "attacker_node_id": {
+          "name": "attacker_node_id",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "description": "Resolved attacker/compromised sender executed by runtime.",
+          "semantic_id": "plan.attacker"
+        },
+        "target_node_ids": {
+          "name": "target_node_ids",
+          "type": "array<integer>",
+          "required": true,
+          "nullable": false,
+          "description": "Target nodes.",
+          "semantic_id": "plan.target_nodes"
+        },
+        "target_link_ids": {
+          "name": "target_link_ids",
+          "type": "array<string>",
+          "required": true,
+          "nullable": false,
+          "description": "Target links.",
+          "semantic_id": "plan.target_links"
+        },
+        "intensity": {
+          "name": "intensity",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "description": "Magnitude and unit.",
+          "semantic_id": "plan.intensity"
+        },
+        "parameters": {
+          "name": "parameters",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "description": "Full mechanism parameters.",
+          "semantic_id": "plan.parameters"
+        },
+        "attack_id": {
+          "name": "attack_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Stable configured or run-scoped episode ID.",
+          "semantic_id": "plan.attack_id"
+        }
+      }
+    },
+    "NormalDisturbancePlan": {
+      "description": "Complete normal attack-like control plan that creates no attack label.",
+      "fields": {
+        "disturbance_type": {
+          "name": "disturbance_type",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "NORMAL_LOW_SNR",
+            "NORMAL_PACKET_LOSS",
+            "NORMAL_TRAFFIC_BURST",
+            "NORMAL_OUT_OF_ORDER",
+            "NORMAL_STATE_CHANGE",
+            "NORMAL_CONGESTION"
+          ],
+          "description": "Normal-control type.",
+          "semantic_id": "normal.type"
+        },
+        "start_s": {
+          "name": "start_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "minimum": 0,
+          "description": "Start time.",
+          "semantic_id": "normal.start"
+        },
+        "end_s": {
+          "name": "end_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "exclusiveMinimum": 0,
+          "description": "End time.",
+          "semantic_id": "normal.end"
+        },
+        "target_node_ids": {
+          "name": "target_node_ids",
+          "type": "array<integer>",
+          "required": true,
+          "nullable": false,
+          "description": "Affected legitimate nodes.",
+          "semantic_id": "normal.target_nodes"
+        },
+        "target_link_ids": {
+          "name": "target_link_ids",
+          "type": "array<string>",
+          "required": true,
+          "nullable": false,
+          "description": "Affected links.",
+          "semantic_id": "normal.target_links"
+        },
+        "parameters": {
+          "name": "parameters",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "description": "Normal condition parameters.",
+          "semantic_id": "normal.parameters"
+        },
+        "profile_id": {
+          "name": "profile_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Stable configured or run-scoped profile ID.",
+          "semantic_id": "normal.profile_id"
+        }
+      }
+    },
+    "events": {
+      "description": "One observer-local online event.",
+      "fields": {
+        "schema_version": {
+          "name": "schema_version",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Contract version.",
+          "semantic_id": "event.schema_version"
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Owning run.",
+          "semantic_id": "event.run_id"
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Unique occurrence ID.",
+          "semantic_id": "event.identity"
+        },
+        "message_id": {
+          "name": "message_id",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Stable end-to-end identity; replay preserves it.",
+          "semantic_id": "message.identity"
+        },
+        "sim_time_s": {
+          "name": "sim_time_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "minimum": 0,
+          "description": "SimulationClock timestamp.",
+          "semantic_id": "event.simulation_time"
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "TX",
+            "RX_SUCCESS",
+            "RX_FAILURE",
+            "PHY_SAMPLE",
+            "QUEUE_SAMPLE",
+            "NODE_STATE",
+            "TOPOLOGY_UPDATE",
+            "AUTH_RESULT",
+            "MODEL_RESULT",
+            "DEFENSE_RESULT"
+          ],
+          "description": "Event lifecycle type.",
+          "semantic_id": "event.type"
+        },
+        "observer_node_id": {
+          "name": "observer_node_id",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "description": "Local observer.",
+          "semantic_id": "observation.owner"
+        },
+        "observer_role": {
+          "name": "observer_role",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "GCS",
+            "LEADER",
+            "FOLLOWER",
+            "EXTERNAL"
+          ],
+          "description": "Observer role.",
+          "semantic_id": "observation.owner_role"
+        },
+        "online_features": {
+          "name": "online_features",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "OnlineFeatures",
+          "description": "Causal local features.",
+          "semantic_id": "event.online_features"
+        },
+        "availability": {
+          "name": "availability",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "EventAvailability",
+          "description": "Availability/missing reasons.",
+          "semantic_id": "event.availability"
+        },
+        "extensions": {
+          "name": "extensions",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "description": "Compatible semantic extensions.",
+          "semantic_id": "event.extensions"
+        }
+      }
+    },
+    "OnlineFeatures": {
+      "description": "Frozen online feature groups.",
+      "fields": {
+        "packet": {
+          "name": "packet",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "online_features.packet",
+          "description": "Packet/header observation.",
+          "semantic_id": "features.packet"
+        },
+        "phy": {
+          "name": "phy",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "online_features.phy",
+          "description": "Receiver PHY observation.",
+          "semantic_id": "features.phy"
+        },
+        "traffic": {
+          "name": "traffic",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "online_features.traffic",
+          "description": "Observer traffic state.",
+          "semantic_id": "features.traffic"
+        },
+        "node_state": {
+          "name": "node_state",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "online_features.node_state",
+          "description": "Local node state.",
+          "semantic_id": "features.node"
+        },
+        "topology": {
+          "name": "topology",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "online_features.topology",
+          "description": "Local topology.",
+          "semantic_id": "features.topology"
+        },
+        "security_state": {
+          "name": "security_state",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "online_features.security_state",
+          "description": "Local security state.",
+          "semantic_id": "features.security"
+        },
+        "resource_state": {
+          "name": "resource_state",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "online_features.resource_state",
+          "description": "Local resource state.",
+          "semantic_id": "features.resource"
+        }
+      }
+    },
+    "EventAvailability": {
+      "description": "Availability of causal event observations.",
+      "fields": {
+        "payload_available": {
+          "name": "payload_available",
+          "type": "boolean",
+          "required": true,
+          "nullable": false,
+          "description": "Authorized plaintext is locally available.",
+          "semantic_id": "availability.payload"
+        },
+        "phy_available": {
+          "name": "phy_available",
+          "type": "boolean",
+          "required": true,
+          "nullable": false,
+          "description": "Local PHY observation is available.",
+          "semantic_id": "availability.phy"
+        },
+        "sensor_available": {
+          "name": "sensor_available",
+          "type": "boolean",
+          "required": true,
+          "nullable": false,
+          "description": "Local sensor observation is available.",
+          "semantic_id": "availability.sensor"
+        },
+        "missing_reason": {
+          "name": "missing_reason",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Explicit unavailable/not-applicable reason.",
+          "semantic_id": "availability.reason"
+        }
+      }
+    },
+    "labels": {
+      "description": "Offline attack truth separate from events.",
+      "fields": {
+        "schema_version": {
+          "name": "schema_version",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Contract version.",
+          "semantic_id": "label.schema_version"
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Owning run.",
+          "semantic_id": "label.run_id"
+        },
+        "label_id": {
+          "name": "label_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Unique label ID.",
+          "semantic_id": "label.identity"
+        },
+        "attack_id": {
+          "name": "attack_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Attack episode ID.",
+          "semantic_id": "attack.identity"
+        },
+        "attack_family": {
+          "name": "attack_family",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "SPOOFING",
+            "EAVESDROPPING",
+            "DOS",
+            "FDI",
+            "REPLAY"
+          ],
+          "description": "Attack family truth.",
+          "semantic_id": "attack.family"
+        },
+        "attack_subtype": {
+          "name": "attack_subtype",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "UNKNOWN_ID",
+            "KNOWN_ID_CONFLICT",
+            "PASSIVE_CAPTURE",
+            "NONSENSITIVE_PLAINTEXT_CONTROL",
+            "CIPHERTEXT_ONLY",
+            "PLAINTEXT_EXPOSURE",
+            "FLOODING",
+            "COMMAND_REPLACEMENT",
+            "TELEMETRY_ABRUPT_CHANGE",
+            "TELEMETRY_GRADUAL_DRIFT",
+            "OUT_OF_RANGE_VALUE",
+            "LOGICAL_INCONSISTENCY",
+            "IMMEDIATE_REPLAY",
+            "DELAYED_REPLAY",
+            "OLD_SESSION_REPLAY",
+            "CAPTURE_AND_REPLAY"
+          ],
+          "description": "Attack subtype truth.",
+          "semantic_id": "attack.subtype"
+        },
+        "scheduled_start_s": {
+          "name": "scheduled_start_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "description": "Scheduled start.",
+          "semantic_id": "attack.scheduled_start"
+        },
+        "impact_start_s": {
+          "name": "impact_start_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "description": "Impact start.",
+          "semantic_id": "attack.impact_start"
+        },
+        "end_s": {
+          "name": "end_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "description": "Episode end.",
+          "semantic_id": "attack.end"
+        },
+        "attacker_node_id": {
+          "name": "attacker_node_id",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "description": "Resolved truth-only actor/compromised sender.",
+          "semantic_id": "attack.actor"
+        },
+        "target_node_ids": {
+          "name": "target_node_ids",
+          "type": "array<integer>",
+          "required": true,
+          "nullable": false,
+          "description": "Truth-only targets.",
+          "semantic_id": "attack.target_nodes"
+        },
+        "target_link_ids": {
+          "name": "target_link_ids",
+          "type": "array<string>",
+          "required": true,
+          "nullable": false,
+          "description": "Truth-only links.",
+          "semantic_id": "attack.target_links"
+        },
+        "intensity": {
+          "name": "intensity",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "description": "Configured attack intensity and unit.",
+          "semantic_id": "attack.intensity"
+        },
+        "parameters": {
+          "name": "parameters",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "description": "Complete mechanism parameters such as replay delay or FDI drift.",
+          "semantic_id": "attack.parameters"
+        },
+        "truth": {
+          "name": "truth",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "AttackTruth",
+          "description": "Mechanism truth and lifecycle references.",
+          "semantic_id": "attack.truth"
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "AttackOutcome",
+          "description": "Frozen staged, target-side post-run effects.",
+          "semantic_id": "attack.outcome"
+        }
+      }
+    },
+    "AttackTruth": {
+      "description": "Typed common attack-truth fields; family-specific truth may use additional properties.",
+      "additional_properties": true,
+      "fields": {
+        "generated_message_ids": {
+          "name": "generated_message_ids",
+          "type": "array<string>",
+          "required": false,
+          "nullable": false,
+          "description": "Messages created by an attack path; not necessarily observable.",
+          "semantic_id": "truth.generated_messages"
+        },
+        "queued_message_ids": {
+          "name": "queued_message_ids",
+          "type": "array<string>",
+          "required": false,
+          "nullable": false,
+          "description": "Generated messages accepted into a runtime queue.",
+          "semantic_id": "truth.queued_messages"
+        },
+        "affected_message_ids": {
+          "name": "affected_message_ids",
+          "type": "array<string>",
+          "required": false,
+          "nullable": false,
+          "description": "Only messages present in the observable event chain.",
+          "semantic_id": "truth.affected_messages"
+        },
+        "backlogged_message_ids": {
+          "name": "backlogged_message_ids",
+          "type": "array<string>",
+          "required": false,
+          "nullable": false,
+          "description": "Queued but not transmitted messages at observation/end.",
+          "semantic_id": "truth.backlogged_messages"
+        },
+        "relevant_evidence_event_ids": {
+          "name": "relevant_evidence_event_ids",
+          "type": "array<string>",
+          "required": false,
+          "nullable": false,
+          "description": "Observable evidence events belonging to the episode scope.",
+          "semantic_id": "truth.relevant_evidence"
+        },
+        "actual_transmitter_id": {
+          "name": "actual_transmitter_id",
+          "type": "integer",
+          "required": false,
+          "nullable": true,
+          "description": "Truth-only physical/compromised transmitter.",
+          "semantic_id": "truth.actual_transmitter"
+        },
+        "original_value": {
+          "name": "original_value",
+          "type": "object",
+          "required": false,
+          "nullable": true,
+          "description": "FDI pre-mutation business value.",
+          "semantic_id": "truth.original_value"
+        },
+        "modified_value": {
+          "name": "modified_value",
+          "type": "object",
+          "required": false,
+          "nullable": true,
+          "description": "FDI post-mutation business value.",
+          "semantic_id": "truth.modified_value"
+        },
+        "injection_stage": {
+          "name": "injection_stage",
+          "type": "string",
+          "required": false,
+          "nullable": false,
+          "enum": [
+            "POST_HMAC_PRE_TRANSMISSION"
+          ],
+          "description": "FDI mutates business payload after application HMAC and before transmission.",
+          "semantic_id": "truth.injection_stage"
+        },
+        "requested_plan": {
+          "name": "requested_plan",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "description": "Caller-supplied plan before defaults are resolved.",
+          "semantic_id": "truth.requested_plan"
+        },
+        "resolved_plan": {
+          "name": "resolved_plan",
+          "type": "object",
+          "required": true,
+          "nullable": false,
+          "object_ref": "AttackPlan",
+          "description": "Exact plan executed by runtime.",
+          "semantic_id": "truth.resolved_plan"
+        },
+        "observable_target_link_ids": {
+          "name": "observable_target_link_ids",
+          "type": "array<string>",
+          "required": false,
+          "nullable": false,
+          "description": "Opaque online aliases corresponding to target links; stored only in truth/provenance for scoped evaluation.",
+          "semantic_id": "truth.observable_target_links"
+        },
+        "contributing_attack_ids": {
+          "name": "contributing_attack_ids",
+          "type": "array<string>",
+          "required": false,
+          "nullable": false,
+          "description": "Offline IDs contributing to the same message/link effect.",
+          "semantic_id": "truth.contributing_attacks"
+        },
+        "compound_attribution": {
+          "name": "compound_attribution",
+          "type": "array<object>",
+          "required": false,
+          "nullable": false,
+          "description": "Offline per-message compound attribution evidence.",
+          "semantic_id": "truth.compound_attribution"
+        }
+      }
+    },
+    "AttackOutcome": {
+      "description": "Cross-family lifecycle; effectiveness is target-side security or mission impact, never injection alone.",
+      "additional_properties": true,
+      "fields": {
+        "attack_active": {
+          "name": "attack_active",
+          "type": "boolean",
+          "required": false,
+          "nullable": false,
+          "description": "The episode is within its configured active interval.",
+          "semantic_id": "outcome.attack_active"
+        },
+        "eligible_opportunity_seen": {
+          "name": "eligible_opportunity_seen",
+          "type": "boolean",
+          "required": false,
+          "nullable": false,
+          "description": "A packet/link opportunity matching attacker, target, and subtype requirements was observed.",
+          "semantic_id": "outcome.eligible_opportunity"
+        },
+        "attempted": {
+          "name": "attempted",
+          "type": "boolean",
+          "required": true,
+          "nullable": false,
+          "description": "Attack plan attempted execution.",
+          "semantic_id": "outcome.attempted"
+        },
+        "injected": {
+          "name": "injected",
+          "type": "boolean",
+          "required": true,
+          "nullable": false,
+          "description": "Attack medium/content/interference was injected.",
+          "semantic_id": "outcome.injected"
+        },
+        "reached_target": {
+          "name": "reached_target",
+          "type": "boolean",
+          "required": true,
+          "nullable": false,
+          "description": "Malicious effect reached the configured target receiver/link/service.",
+          "semantic_id": "outcome.reached_target"
+        },
+        "malicious_content_executed": {
+          "name": "malicious_content_executed",
+          "type": "boolean",
+          "required": true,
+          "nullable": false,
+          "description": "Target business/security logic accepted or acted on malicious content.",
+          "semantic_id": "outcome.malicious_content_executed"
+        },
+        "mission_impact": {
+          "name": "mission_impact",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Measured normalized mission impact when available.",
+          "semantic_id": "outcome.mission_impact"
+        },
+        "mission_impact_available": {
+          "name": "mission_impact_available",
+          "type": "boolean",
+          "required": false,
+          "nullable": false,
+          "description": "Whether mission impact has measured semantic support.",
+          "semantic_id": "outcome.mission_impact_available"
+        },
+        "mission_impact_missing_reason": {
+          "name": "mission_impact_missing_reason",
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Reason mission impact is unavailable.",
+          "semantic_id": "outcome.mission_impact_missing_reason"
+        },
+        "mission_impact_components": {
+          "name": "mission_impact_components",
+          "type": "object",
+          "required": false,
+          "nullable": false,
+          "description": "Explainable business/service components used for mission impact.",
+          "semantic_id": "outcome.mission_impact_components"
+        },
+        "business_apply_result": {
+          "name": "business_apply_result",
+          "type": "object",
+          "required": false,
+          "nullable": false,
+          "description": "Target business-handler acceptance/execution evidence.",
+          "semantic_id": "outcome.business_apply_result"
+        },
+        "attack_effective": {
+          "name": "attack_effective",
+          "type": "boolean",
+          "required": true,
+          "nullable": false,
+          "description": "Family policy found target-side security or mission effect.",
+          "semantic_id": "outcome.attack_effective"
+        },
+        "effectiveness_semantics": {
+          "name": "effectiveness_semantics",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "TARGET_SIDE_SECURITY_OR_MISSION_EFFECT"
+          ],
+          "description": "Frozen interpretation of attack_effective.",
+          "semantic_id": "outcome.effectiveness_semantics"
+        }
+      }
+    },
+    "rf_manifest": {
+      "description": "External IQ sample manifest; every field is structurally required.",
+      "fields": {
+        "sample_id": {
+          "name": "sample_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Unique sample reference.",
+          "semantic_id": "rf.sample_id"
+        },
+        "file_path": {
+          "name": "file_path",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Path below rf_samples.",
+          "semantic_id": "rf.file_path"
+        },
+        "device_id": {
+          "name": "device_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Actual transmitter.",
+          "semantic_id": "rf.device_id"
+        },
+        "claimed_device_id": {
+          "name": "claimed_device_id",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Claimed transmitter.",
+          "semantic_id": "rf.claimed_device_id"
+        },
+        "device_model": {
+          "name": "device_model",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Transmitter model provenance.",
+          "semantic_id": "rf.device_model"
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Capture session.",
+          "semantic_id": "rf.session_id"
+        },
+        "receiver_id": {
+          "name": "receiver_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Receiver identity.",
+          "semantic_id": "rf.receiver_id"
+        },
+        "receiver_model": {
+          "name": "receiver_model",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Receiver model provenance.",
+          "semantic_id": "rf.receiver_model"
+        },
+        "center_frequency_hz": {
+          "name": "center_frequency_hz",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "Hz",
+          "exclusiveMinimum": 0,
+          "description": "Center frequency.",
+          "semantic_id": "rf.center_frequency"
+        },
+        "sample_rate_hz": {
+          "name": "sample_rate_hz",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "Hz",
+          "exclusiveMinimum": 0,
+          "description": "Sample rate.",
+          "semantic_id": "rf.sample_rate"
+        },
+        "bandwidth_hz": {
+          "name": "bandwidth_hz",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "Hz",
+          "exclusiveMinimum": 0,
+          "description": "Signal bandwidth.",
+          "semantic_id": "rf.bandwidth"
+        },
+        "sample_format": {
+          "name": "sample_format",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "IQ encoding.",
+          "semantic_id": "rf.sample_format"
+        },
+        "sample_count": {
+          "name": "sample_count",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "unit": "complex samples",
+          "minimum": 1,
+          "description": "Positive sample count.",
+          "semantic_id": "rf.sample_count"
+        },
+        "snr_db": {
+          "name": "snr_db",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "dB",
+          "description": "Receiver-local SNR.",
+          "semantic_id": "rf.snr"
+        },
+        "rssi_dbm": {
+          "name": "rssi_dbm",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "dBm",
+          "description": "Receiver-local RSSI.",
+          "semantic_id": "rf.rssi"
+        },
+        "capture_start_utc": {
+          "name": "capture_start_utc",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Timezone-aware ISO-8601 start.",
+          "semantic_id": "rf.capture_start_utc"
+        },
+        "data_source": {
+          "name": "data_source",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "simulation",
+            "calibrated_simulation",
+            "real_measurement",
+            "augmented_real"
+          ],
+          "description": "Sample provenance.",
+          "semantic_id": "rf.data_source"
+        },
+        "label_quality": {
+          "name": "label_quality",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Label quality.",
+          "semantic_id": "rf.label_quality"
+        }
+      }
+    },
+    "model_result": {
+      "description": "Model adapter decision; unavailable is never fabricated as NORMAL.",
+      "fields": {
+        "schema_version": {
+          "name": "schema_version",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Contract version.",
+          "semantic_id": "model.schema_version"
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Owning run.",
+          "semantic_id": "model.run_id"
+        },
+        "result_id": {
+          "name": "result_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Decision ID.",
+          "semantic_id": "model.result_id"
+        },
+        "observer_node_id": {
+          "name": "observer_node_id",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "description": "Inference owner.",
+          "semantic_id": "model.observer"
+        },
+        "decision_time_s": {
+          "name": "decision_time_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "minimum": 0,
+          "description": "Decision time.",
+          "semantic_id": "model.decision_time"
+        },
+        "model_name": {
+          "name": "model_name",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "description": "Model name.",
+          "semantic_id": "model.name"
+        },
+        "model_version": {
+          "name": "model_version",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Artifact version.",
+          "semantic_id": "model.version"
+        },
+        "status": {
+          "name": "status",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "OK",
+            "UNAVAILABLE",
+            "ERROR"
+          ],
+          "description": "Model execution status.",
+          "semantic_id": "model.status"
+        },
+        "predicted_label": {
+          "name": "predicted_label",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Predicted class.",
+          "semantic_id": "model.predicted_label"
+        },
+        "scores": {
+          "name": "scores",
+          "type": "object",
+          "required": true,
+          "nullable": true,
+          "description": "Class scores.",
+          "semantic_id": "model.scores"
+        },
+        "confidence": {
+          "name": "confidence",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence.",
+          "semantic_id": "model.confidence"
+        },
+        "quality": {
+          "name": "quality",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Input/result quality.",
+          "semantic_id": "model.quality"
+        },
+        "recommended_action": {
+          "name": "recommended_action",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Policy recommendation.",
+          "semantic_id": "model.recommended_action"
+        },
+        "evidence_event_ids": {
+          "name": "evidence_event_ids",
+          "type": "array<string>",
+          "required": true,
+          "nullable": false,
+          "description": "Causal evidence IDs.",
+          "semantic_id": "model.evidence"
+        },
+        "inference_time_ms": {
+          "name": "inference_time_ms",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "ms",
+          "minimum": 0,
+          "description": "Inference cost.",
+          "semantic_id": "model.inference_time"
+        },
+        "error_code": {
+          "name": "error_code",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Missing/error reason.",
+          "semantic_id": "model.error_code"
+        },
+        "error_summary": {
+          "name": "error_summary",
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Bounded non-traceback diagnostic summary for adapter failures.",
+          "semantic_id": "model.error_summary"
+        }
+      }
+    },
+    "LocalPhyObservation": {
+      "description": "A terminal-local reciprocal probe observation for A's adapter.",
+      "fields": {
+        "local_id": {
+          "name": "local_id",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "description": "Owning endpoint.",
+          "semantic_id": "probe.local_id"
+        },
+        "peer_id": {
+          "name": "peer_id",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "description": "Direct peer endpoint.",
+          "semantic_id": "probe.peer_id"
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "pattern": "^sess-[0-9a-f]{12}-[0-9]{8}$",
+          "description": "Opaque shared probe session; carries no endpoint or scenario truth.",
+          "semantic_id": "probe.session_id"
+        },
+        "probe_id": {
+          "name": "probe_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "pattern": "^prb-[0-9a-f]{12}-[0-9]{8}$",
+          "description": "Opaque shared probe exchange ID.",
+          "semantic_id": "probe.identity"
+        },
+        "sim_time_s": {
+          "name": "sim_time_s",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "s",
+          "description": "SimulationClock time.",
+          "semantic_id": "probe.time"
+        },
+        "freq_hz": {
+          "name": "freq_hz",
+          "type": "number",
+          "required": true,
+          "nullable": false,
+          "unit": "Hz",
+          "description": "Shared probe carrier.",
+          "semantic_id": "probe.frequency"
+        },
+        "role": {
+          "name": "role",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "tx",
+            "rx"
+          ],
+          "description": "Endpoint role in exchange.",
+          "semantic_id": "probe.role"
+        },
+        "measurement_kind": {
+          "name": "measurement_kind",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "rssi_dbm",
+            "csi"
+          ],
+          "description": "Measurement representation. csi is the platform frequency-domain |H[k]| prepared for SKG.",
+          "semantic_id": "probe.measurement_kind"
+        },
+        "measurement": {
+          "name": "measurement",
+          "type": "array<number>",
+          "required": true,
+          "nullable": true,
+          "unit": "dBm",
+          "description": "Local measurement vector.",
+          "semantic_id": "probe.measurement"
+        },
+        "snr_db": {
+          "name": "snr_db",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "dB",
+          "description": "Independently derived local SNR.",
+          "semantic_id": "probe.local_snr"
+        },
+        "noise_var": {
+          "name": "noise_var",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "dB^2",
+          "description": "Local receiver noise variance.",
+          "semantic_id": "probe.noise_variance"
+        },
+        "missing": {
+          "name": "missing",
+          "type": "boolean",
+          "required": true,
+          "nullable": false,
+          "description": "True when direct reciprocal probing is unavailable.",
+          "semantic_id": "probe.missing"
+        },
+        "missing_reason": {
+          "name": "missing_reason",
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Explicit reason such as FREQUENCY_MISMATCH.",
+          "semantic_id": "probe.missing_reason"
+        }
+      }
+    },
+    "online_features.packet": {
+      "description": "Observable packet/header projection.",
+      "fields": {
+        "claimed_src_id": {
+          "name": "claimed_src_id",
+          "type": "integer",
+          "required": true,
+          "nullable": true,
+          "description": "Claimed source.",
+          "semantic_id": "packet.claimed_source"
+        },
+        "claimed_dst_id": {
+          "name": "claimed_dst_id",
+          "type": "integer",
+          "required": true,
+          "nullable": true,
+          "description": "Claimed destination.",
+          "semantic_id": "packet.claimed_destination"
+        },
+        "packet_type": {
+          "name": "packet_type",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Application type.",
+          "semantic_id": "packet.type"
+        },
+        "packet_size_bytes": {
+          "name": "packet_size_bytes",
+          "type": "integer",
+          "required": true,
+          "nullable": true,
+          "unit": "B",
+          "minimum": 0,
+          "description": "UTF-8 byte length of the canonical JSON serialized application payload; excludes encryption and PHY/link overhead.",
+          "semantic_id": "packet.canonical_application_size"
+        },
+        "sequence_no": {
+          "name": "sequence_no",
+          "type": "integer",
+          "required": true,
+          "nullable": true,
+          "description": "Sender sequence.",
+          "semantic_id": "packet.sequence"
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "pattern": "^sess-[0-9a-f]{12}-[0-9]{8}$",
+          "description": "Opaque protocol session identifier; no scenario or private endpoint encoding.",
+          "semantic_id": "packet.session"
+        },
+        "key_epoch": {
+          "name": "key_epoch",
+          "type": "integer|string",
+          "required": true,
+          "nullable": true,
+          "description": "Replay-isolating key epoch.",
+          "semantic_id": "packet.key_epoch"
+        },
+        "hop_index": {
+          "name": "hop_index",
+          "type": "integer",
+          "required": true,
+          "nullable": true,
+          "description": "Route hop index.",
+          "semantic_id": "packet.hop_index"
+        },
+        "link_id": {
+          "name": "link_id",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "pattern": "^lnk-[0-9a-f]{12}-[0-9]{8}$",
+          "description": "Opaque current directed-link identifier; endpoints are resolved through authorized runtime state.",
+          "semantic_id": "packet.link"
+        },
+        "inter_arrival_s": {
+          "name": "inter_arrival_s",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "s",
+          "minimum": 0,
+          "description": "Observer/local-flow RX interval.",
+          "semantic_id": "traffic.inter_arrival"
+        },
+        "encrypted": {
+          "name": "encrypted",
+          "type": "boolean",
+          "required": true,
+          "nullable": true,
+          "description": "Payload protection flag.",
+          "semantic_id": "packet.encrypted"
+        },
+        "payload_numeric": {
+          "name": "payload_numeric",
+          "type": "object",
+          "required": true,
+          "nullable": true,
+          "description": "Available numeric payload.",
+          "semantic_id": "packet.payload_numeric"
+        },
+        "command_type": {
+          "name": "command_type",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Available command type.",
+          "semantic_id": "packet.command_type"
+        }
+      }
+    },
+    "online_features.phy": {
+      "description": "Receiver-local current-hop PHY fields.",
+      "fields": {
+        "rssi_dbm": {
+          "name": "rssi_dbm",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "dBm",
+          "description": "Signal strength.",
+          "semantic_id": "phy.rssi"
+        },
+        "snr_db": {
+          "name": "snr_db",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "dB",
+          "description": "Local SNR.",
+          "semantic_id": "phy.snr"
+        },
+        "sinr_db": {
+          "name": "sinr_db",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "dB",
+          "description": "Local SINR.",
+          "semantic_id": "phy.sinr"
+        },
+        "noise_power_dbm": {
+          "name": "noise_power_dbm",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "dBm",
+          "description": "Noise estimate.",
+          "semantic_id": "phy.noise"
+        },
+        "interference_power_dbm": {
+          "name": "interference_power_dbm",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "dBm",
+          "description": "Interference estimate.",
+          "semantic_id": "phy.interference"
+        },
+        "per_estimate": {
+          "name": "per_estimate",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "ratio",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Packet error estimate.",
+          "semantic_id": "phy.per"
+        },
+        "decode_success": {
+          "name": "decode_success",
+          "type": "boolean",
+          "required": true,
+          "nullable": true,
+          "description": "Current-hop decode result.",
+          "semantic_id": "phy.decode"
+        },
+        "channel_busy_ratio": {
+          "name": "channel_busy_ratio",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "ratio",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Channel occupancy.",
+          "semantic_id": "phy.busy"
+        },
+        "frequency_hz": {
+          "name": "frequency_hz",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "Hz",
+          "exclusiveMinimum": 0,
+          "description": "Carrier frequency.",
+          "semantic_id": "phy.frequency"
+        },
+        "bandwidth_hz": {
+          "name": "bandwidth_hz",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "Hz",
+          "exclusiveMinimum": 0,
+          "description": "Channel bandwidth.",
+          "semantic_id": "phy.bandwidth"
+        },
+        "channel_id": {
+          "name": "channel_id",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Channel ID.",
+          "semantic_id": "phy.channel"
+        },
+        "measurement_quality": {
+          "name": "measurement_quality",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "ratio",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Measurement quality.",
+          "semantic_id": "phy.quality"
+        },
+        "csi_mag_db": {
+          "name": "csi_mag_db",
+          "type": "array<number>",
+          "required": true,
+          "nullable": true,
+          "unit": "dB",
+          "description": "Receiver-local frequency-domain |H[k]| in dB. Both directions share the latent response and add independent noise.",
+          "semantic_id": "phy.csi_mag_db"
+        },
+        "rf_sample_ref": {
+          "name": "rf_sample_ref",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Current-hop manifest sample_id.",
+          "semantic_id": "phy.rf_sample_ref"
+        }
+      }
+    },
+    "online_features.traffic": {
+      "description": "Observer-local rolling receive statistics.",
+      "fields": {
+        "packet_rate_pps": {
+          "name": "packet_rate_pps",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "packet/s",
+          "minimum": 0,
+          "description": "Recent local RX rate.",
+          "semantic_id": "traffic.packet_rate"
+        },
+        "total_packet_count": {
+          "name": "total_packet_count",
+          "type": "integer",
+          "required": false,
+          "nullable": true,
+          "minimum": 0,
+          "description": "All-source decoded arrivals in the receiver window, counted before HMAC rejection.",
+          "semantic_id": "traffic.receiver_total_arrivals"
+        },
+        "statistics_window_s": {
+          "name": "statistics_window_s",
+          "type": "number",
+          "required": false,
+          "nullable": true,
+          "unit": "s",
+          "exclusiveMinimum": 0,
+          "description": "Window used for receiver-total arrival rate.",
+          "semantic_id": "traffic.receiver_total_window"
+        },
+        "flooding_threshold_pps": {
+          "name": "flooding_threshold_pps",
+          "type": "number",
+          "required": false,
+          "nullable": true,
+          "unit": "packet/s",
+          "exclusiveMinimum": 0,
+          "description": "Configured receiver-total flooding threshold.",
+          "semantic_id": "traffic.flooding_threshold"
+        },
+        "byte_rate_Bps": {
+          "name": "byte_rate_Bps",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "B/s",
+          "minimum": 0,
+          "description": "Recent local canonical application-byte rate.",
+          "semantic_id": "traffic.byte_rate"
+        },
+        "duplicate_count": {
+          "name": "duplicate_count",
+          "type": "integer",
+          "required": true,
+          "nullable": true,
+          "minimum": 0,
+          "description": "Recent duplicates.",
+          "semantic_id": "traffic.duplicates"
+        },
+        "sequence_gap_count": {
+          "name": "sequence_gap_count",
+          "type": "integer",
+          "required": true,
+          "nullable": true,
+          "minimum": 0,
+          "description": "Unfilled sequence gaps detected inside the configured recent statistics window; late arrival clears the gap and expired detections age out.",
+          "semantic_id": "traffic.recent_window_sequence_gaps"
+        },
+        "rx_queue_length": {
+          "name": "rx_queue_length",
+          "type": "integer",
+          "required": true,
+          "nullable": true,
+          "unit": "packet",
+          "minimum": 0,
+          "description": "RX queue length.",
+          "semantic_id": "traffic.rx_queue"
+        },
+        "forward_queue_length": {
+          "name": "forward_queue_length",
+          "type": "integer",
+          "required": true,
+          "nullable": true,
+          "unit": "packet",
+          "minimum": 0,
+          "description": "Forward queue length.",
+          "semantic_id": "traffic.forward_queue"
+        },
+        "drop_count": {
+          "name": "drop_count",
+          "type": "integer",
+          "required": true,
+          "nullable": true,
+          "unit": "packet",
+          "minimum": 0,
+          "description": "Local cumulative drops.",
+          "semantic_id": "traffic.drops"
+        },
+        "latency_ms": {
+          "name": "latency_ms",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "ms",
+          "minimum": 0,
+          "description": "Recent successful RX mean latency.",
+          "semantic_id": "traffic.latency"
+        },
+        "throughput_mbps": {
+          "name": "throughput_mbps",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "Mbit/s",
+          "minimum": 0,
+          "description": "Recent successful RX throughput.",
+          "semantic_id": "traffic.throughput"
+        }
+      }
+    },
+    "online_features.node_state": {
+      "description": "Observer-owned node/mission state.",
+      "fields": {
+        "battery_pct": {
+          "name": "battery_pct",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "%",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Battery state.",
+          "semantic_id": "node.battery"
+        },
+        "flight_state": {
+          "name": "flight_state",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Flight state.",
+          "semantic_id": "node.flight_state"
+        },
+        "network_slice": {
+          "name": "network_slice",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Network slice.",
+          "semantic_id": "node.network_slice"
+        },
+        "position_xyz_m": {
+          "name": "position_xyz_m",
+          "type": "array<number>",
+          "required": true,
+          "nullable": true,
+          "unit": "m",
+          "description": "Position.",
+          "semantic_id": "node.position"
+        },
+        "target_position_xyz_m": {
+          "name": "target_position_xyz_m",
+          "type": "array<number>",
+          "required": true,
+          "nullable": true,
+          "unit": "m",
+          "description": "Mission target.",
+          "semantic_id": "node.target_position"
+        },
+        "velocity_xyz_mps": {
+          "name": "velocity_xyz_mps",
+          "type": "array<number>",
+          "required": true,
+          "nullable": true,
+          "unit": "m/s",
+          "description": "Velocity.",
+          "semantic_id": "node.velocity"
+        },
+        "attitude_rpy_deg": {
+          "name": "attitude_rpy_deg",
+          "type": "array<number>",
+          "required": true,
+          "nullable": true,
+          "unit": "degree",
+          "description": "Attitude.",
+          "semantic_id": "node.attitude"
+        },
+        "sensor_quality": {
+          "name": "sensor_quality",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "description": "Sensor quality.",
+          "semantic_id": "node.sensor_quality"
+        },
+        "state_owner_node_id": {
+          "name": "state_owner_node_id",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "description": "State owner.",
+          "semantic_id": "node.state_owner"
+        }
+      }
+    },
+    "online_features.topology": {
+      "description": "Observer-local topology, never global graph truth.",
+      "fields": {
+        "neighbor_ids": {
+          "name": "neighbor_ids",
+          "type": "array<integer>",
+          "required": true,
+          "nullable": false,
+          "description": "Active direct neighbors.",
+          "semantic_id": "topology.neighbors"
+        },
+        "neighbor_link_ids": {
+          "name": "neighbor_link_ids",
+          "type": "array<string>",
+          "required": true,
+          "nullable": false,
+          "description": "Active direct links.",
+          "semantic_id": "topology.links"
+        },
+        "known_bad_link_ids": {
+          "name": "known_bad_link_ids",
+          "type": "array<string>",
+          "required": true,
+          "nullable": false,
+          "description": "Locally known bad links.",
+          "semantic_id": "topology.bad_links"
+        },
+        "local_degree": {
+          "name": "local_degree",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "minimum": 0,
+          "description": "Local neighbor count.",
+          "semantic_id": "topology.degree"
+        },
+        "leader_id": {
+          "name": "leader_id",
+          "type": "integer",
+          "required": true,
+          "nullable": true,
+          "description": "Known leader.",
+          "semantic_id": "topology.leader"
+        },
+        "topology_version": {
+          "name": "topology_version",
+          "type": "integer",
+          "required": true,
+          "nullable": false,
+          "minimum": 0,
+          "description": "Last local refresh version.",
+          "semantic_id": "topology.version"
+        }
+      }
+    },
+    "online_features.security_state": {
+      "description": "Local security checks.",
+      "fields": {
+        "auth_result": {
+          "name": "auth_result",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNAVAILABLE"
+          ],
+          "description": "Authentication result.",
+          "semantic_id": "security.auth"
+        },
+        "auth_failure_reason": {
+          "name": "auth_failure_reason",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "Authentication failure reason.",
+          "semantic_id": "security.auth_reason"
+        },
+        "application_hmac_result": {
+          "name": "application_hmac_result",
+          "type": "string",
+          "required": false,
+          "nullable": false,
+          "enum": [
+            "PASS",
+            "FAIL",
+            "MISSING",
+            "UNKNOWN_DEVICE",
+            "UNAVAILABLE",
+            "NOT_APPLICABLE"
+          ],
+          "description": "Independent end-to-end application HMAC result; SKG control uses its separate Ed25519 handshake authentication.",
+          "semantic_id": "security.application_hmac"
+        },
+        "application_hmac_failure_reason": {
+          "name": "application_hmac_failure_reason",
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Non-secret application HMAC failure reason.",
+          "semantic_id": "security.application_hmac_reason"
+        },
+        "application_hmac_key_id": {
+          "name": "application_hmac_key_id",
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Public per-device verification-key identifier; never key material.",
+          "semantic_id": "security.application_hmac_key_id"
+        },
+        "replay_check_result": {
+          "name": "replay_check_result",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "PASS",
+            "DUPLICATE",
+            "STALE",
+            "STALE_TIMESTAMP",
+            "INVALID_TIMESTAMP",
+            "WRONG_SESSION",
+            "UNAVAILABLE"
+          ],
+          "description": "Timestamp, session, and sequence replay result.",
+          "semantic_id": "security.replay"
+        },
+        "key_state": {
+          "name": "key_state",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [
+            "AVAILABLE",
+            "EXPIRED",
+            "MISSING",
+            "UPDATING",
+            "FAILED",
+            "UNAVAILABLE"
+          ],
+          "description": "Key provider state.",
+          "semantic_id": "security.key_state"
+        },
+        "rff_identity_result": {
+          "name": "rff_identity_result",
+          "type": "string",
+          "required": true,
+          "nullable": true,
+          "description": "RFF model prediction if available.",
+          "semantic_id": "security.rff"
+        },
+        "rff_identity_confidence": {
+          "name": "rff_identity_confidence",
+          "type": "number",
+          "required": false,
+          "nullable": true,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "RFF model confidence.",
+          "semantic_id": "security.rff_confidence"
+        },
+        "rff_quality": {
+          "name": "rff_quality",
+          "type": "number",
+          "required": false,
+          "nullable": true,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "RFF input/result quality.",
+          "semantic_id": "security.rff_quality"
+        },
+        "rff_last_update_s": {
+          "name": "rff_last_update_s",
+          "type": "number",
+          "required": false,
+          "nullable": true,
+          "unit": "s",
+          "minimum": 0,
+          "description": "Last local RFF result time.",
+          "semantic_id": "security.rff_last_update"
+        }
+      }
+    },
+    "online_features.resource_state": {
+      "description": "Locally measured resource state.",
+      "fields": {
+        "cpu_pct": {
+          "name": "cpu_pct",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "%",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "CPU usage.",
+          "semantic_id": "resource.cpu"
+        },
+        "memory_mb": {
+          "name": "memory_mb",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "MB",
+          "minimum": 0,
+          "description": "Memory use.",
+          "semantic_id": "resource.memory"
+        },
+        "queue_processing_time_ms": {
+          "name": "queue_processing_time_ms",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "ms",
+          "minimum": 0,
+          "description": "Queue processing cost.",
+          "semantic_id": "resource.queue_time"
+        },
+        "model_inference_time_ms": {
+          "name": "model_inference_time_ms",
+          "type": "number",
+          "required": true,
+          "nullable": true,
+          "unit": "ms",
+          "minimum": 0,
+          "description": "Model inference cost.",
+          "semantic_id": "resource.inference_time"
+        }
+      }
+    }
+  }
+}
