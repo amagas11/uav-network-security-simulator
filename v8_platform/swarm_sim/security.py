@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Deque
 
 from .adapters import KeyProvider
 from .domain import Frame, Node
-from .flood_defense import AdmissionDecision, FloodDefenseController, FloodDefenseState
 from .network import FormationTopology
 from .phy import PersistentPhyModel
 
@@ -51,12 +51,6 @@ class DeterministicRuleEngine:
         traffic_window_s: float = 1.0,
         flooding_threshold_pps: float = 8.0,
         flooding_detection_enabled: bool = True,
-        flooding_severe_rate_multiplier: float = 1.5,
-        flooding_sustained_overload_s: float = 0.5,
-        flooding_recovery_rate_multiplier: float = 0.7,
-        flooding_recovery_hold_s: float = 2.0,
-        flooding_token_refill_rate_pps: float = 8.0,
-        flooding_token_bucket_capacity: float = 12.0,
     ) -> None:
         self.replay_window_size = replay_window_size
         self.replay_timestamp_freshness_s = float(replay_timestamp_freshness_s)
@@ -68,140 +62,49 @@ class DeterministicRuleEngine:
             tuple[int, int, int], set[tuple[str, str]]
         ] = {}
         self._stale_sessions: set[tuple[int, int, int, str, str]] = set()
-        self._flood_defense = FloodDefenseController(
-            window_s=self.traffic_window_s,
-            alert_threshold_pps=self.flooding_threshold_pps,
-            severe_multiplier=flooding_severe_rate_multiplier,
-            sustained_overload_s=flooding_sustained_overload_s,
-            recovery_multiplier=flooding_recovery_rate_multiplier,
-            recovery_hold_s=flooding_recovery_hold_s,
-            token_refill_rate_pps=flooding_token_refill_rate_pps,
-            token_bucket_capacity=flooding_token_bucket_capacity,
-            enabled=self.flooding_detection_enabled,
-        )
-        self._observed_flood_state = FloodDefenseState.NORMAL.value
+        # One engine belongs to one receiver.  Deliberately do not partition
+        # arrivals by sender: flooding is detected from total receiver load.
+        self._arrivals: Deque[float] = deque()
+        self._flood_alert_active = False
 
     def record_arrival(
         self, sim_time_s: float
-    ) -> tuple[Detection | None, dict[str, object]]:
+    ) -> tuple[Detection | None, dict[str, float | int]]:
         """Count every successfully decoded arrival before application HMAC."""
 
-        snapshot = self._flood_defense.record_arrival(sim_time_s)
-        statistics = self._flood_statistics(snapshot)
-        detection = self._flood_transition_detection(snapshot, statistics)
-        self._observed_flood_state = str(snapshot["state"])
-        return detection, statistics
-
-    def _flood_statistics(self, snapshot: dict[str, object]) -> dict[str, object]:
-        state = str(snapshot["state"])
-        rate = float(snapshot["rate_pps"])
-        return {
+        self._arrivals.append(float(sim_time_s))
+        cutoff = float(sim_time_s) - self.traffic_window_s
+        while self._arrivals and self._arrivals[0] < cutoff:
+            self._arrivals.popleft()
+        count = len(self._arrivals)
+        rate = count / self.traffic_window_s
+        statistics: dict[str, float | int] = {
             "packet_rate_pps": round(rate, 6),
-            "total_packet_count": int(snapshot["arrival_count"]),
+            "total_packet_count": count,
             "statistics_window_s": self.traffic_window_s,
             "flooding_threshold_pps": self.flooding_threshold_pps,
-            "dos_defense_state": state,
-            "alert_threshold_pps": snapshot["alert_threshold_pps"],
-            "severe_threshold_pps": snapshot["severe_threshold_pps"],
-            "recovery_threshold_pps": snapshot["recovery_threshold_pps"],
-            "rate_limit_active": state == FloodDefenseState.LIMITING.value,
         }
-
-    def _flood_transition_detection(
-        self, snapshot: dict[str, object], statistics: dict[str, object]
-    ) -> Detection | None:
-        state = str(snapshot["state"])
-        if not self.flooding_detection_enabled or state == self._observed_flood_state:
-            return None
-
-        action_by_state = {
-            FloodDefenseState.ALERT.value: DefenseAction.INCREASE_MONITORING,
-            FloodDefenseState.LIMITING.value: DefenseAction.RATE_LIMIT,
-        }
-        action = action_by_state.get(state)
-        if action is None:
-            return None
-
-        rate = float(snapshot["rate_pps"])
-        evidence = {
-            **snapshot,
-            **statistics,
-            "observable_subtype": "FLOODING",
-            "window_s": self.traffic_window_s,
-            "threshold_pps": self.flooding_threshold_pps,
-            "scope": "RECEIVER_TOTAL_ARRIVALS",
-        }
-        return Detection(
-            "DOS",
-            min(1.0, 0.75 + 0.02 * max(0.0, rate - self.flooding_threshold_pps)),
-            evidence,
-            action,
-        )
-
-    def advance_flood_defense(
-        self, sim_time_s: float
-    ) -> tuple[Detection | None, dict[str, object]]:
-        snapshot = self._flood_defense.advance(sim_time_s)
-        previous = self._observed_flood_state
-        current = str(snapshot["state"])
-        detection = self._flood_transition_detection(
-            snapshot, self._flood_statistics(snapshot)
-        )
-        self._observed_flood_state = current
-        return detection, {
-            **snapshot,
-            "transitioned": current != previous,
-            "transition_from": previous if current != previous else None,
-            "transition_to": current if current != previous else None,
-        }
-
-    def admit_flood_pre_auth(
-        self,
-        sim_time_s: float,
-        link_sender_id: int,
-        link_id: str,
-        reservation_id: str | None = None,
-    ) -> AdmissionDecision:
-        decision = self._flood_defense.admit_pre_auth(
-            sim_time_s, link_sender_id, link_id, reservation_id
-        )
-        return decision
-
-    def admit_flood_post_auth(
-        self, sim_time_s: float, authenticated_device_id: int
-    ) -> AdmissionDecision:
-        decision = self._flood_defense.admit_post_auth(
-            sim_time_s, authenticated_device_id
-        )
-        return decision
-
-    def release_flood_pre_auth(
-        self,
-        sim_time_s: float,
-        link_sender_id: int,
-        link_id: str,
-        reservation_id: str,
-    ) -> None:
-        self._flood_defense.release_pre_auth(
-            sim_time_s, link_sender_id, link_id, reservation_id
-        )
-
-    def finalize_flood_pre_auth(
-        self,
-        sim_time_s: float,
-        link_sender_id: int,
-        link_id: str,
-        reservation_id: str,
-    ) -> None:
-        self._flood_defense.finalize_pre_auth(
-            sim_time_s, link_sender_id, link_id, reservation_id
-        )
-
-    def flood_defense_snapshot(self, sim_time_s: float) -> dict[str, object]:
-        return self._flood_defense.snapshot(sim_time_s)
-
-    def record_flood_hmac_rejection(self) -> None:
-        self._flood_defense.record_hmac_rejection()
+        # Keep the physical arrival accumulator even when this specialized
+        # detector is not participating. Authentication/replay are independent.
+        if not self.flooding_detection_enabled:
+            return None, statistics
+        over_threshold = rate >= self.flooding_threshold_pps
+        detection = None
+        if over_threshold and not self._flood_alert_active:
+            detection = Detection(
+                "DOS",
+                min(1.0, 0.75 + 0.02 * max(0.0, rate - self.flooding_threshold_pps)),
+                {
+                    "observable_subtype": "FLOODING",
+                    **statistics,
+                    "window_s": self.traffic_window_s,
+                    "threshold_pps": self.flooding_threshold_pps,
+                    "scope": "RECEIVER_TOTAL_ARRIVALS",
+                },
+                DefenseAction.INCREASE_MONITORING,
+            )
+        self._flood_alert_active = over_threshold
+        return detection, statistics
 
     def activate_session(
         self,
@@ -476,8 +379,8 @@ class DeterministicRuleEngine:
         self._replay.clear()
         self._active_sessions.clear()
         self._stale_sessions.clear()
-        self._flood_defense.reset()
-        self._observed_flood_state = FloodDefenseState.NORMAL.value
+        self._arrivals.clear()
+        self._flood_alert_active = False
 
 
 @dataclass(slots=True)
@@ -491,7 +394,6 @@ class DefenseRequest:
     session_id: str | None = None
     requested_time_s: float = 0.0
     reason: str | None = None
-    outcome_scope: str | None = None
 
 
 @dataclass(slots=True)
@@ -538,12 +440,7 @@ class DefenseExecutor:
         elif action == DefenseAction.DROP_PACKET:
             executed = True
         elif action == DefenseAction.RATE_LIMIT:
-            if (
-                request.outcome_scope == "RECEIVER_FLOOD_GUARD"
-                or (request.reason or "").casefold() == "dos"
-            ):
-                executed = True
-            elif request.peer_id is None:
+            if request.peer_id is None:
                 failure = "PEER_REQUIRED"
             else:
                 node.rate_limited_peer_ids.add(request.peer_id)
@@ -617,7 +514,6 @@ class DefenseExecutor:
             executed=executed,
             failure_reason=failure,
             outcome={
-                "scope": request.outcome_scope,
                 "attack_impact": None,
                 "malicious_traffic_blocked": None,
                 "legitimate_traffic_harmed": None,

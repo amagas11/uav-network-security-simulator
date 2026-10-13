@@ -194,12 +194,6 @@ class PlatformRuntime:
                 traffic_window_s=self.config.traffic_statistics_window_s,
                 flooding_threshold_pps=self.config.flooding_packet_rate_threshold_pps,
                 flooding_detection_enabled=self.config.flooding_detection_enabled,
-                flooding_severe_rate_multiplier=self.config.flooding_severe_rate_multiplier,
-                flooding_sustained_overload_s=self.config.flooding_sustained_overload_s,
-                flooding_recovery_rate_multiplier=self.config.flooding_recovery_rate_multiplier,
-                flooding_recovery_hold_s=self.config.flooding_recovery_hold_s,
-                flooding_token_refill_rate_pps=self.config.flooding_token_refill_rate_pps,
-                flooding_token_bucket_capacity=self.config.flooding_token_bucket_capacity,
             )
             for node_id in self.nodes
         }
@@ -400,14 +394,7 @@ class PlatformRuntime:
                 traffic_window_s=self.config.traffic_statistics_window_s,
                 flooding_threshold_pps=self.config.flooding_packet_rate_threshold_pps,
                 flooding_detection_enabled=self.config.flooding_detection_enabled,
-                flooding_severe_rate_multiplier=self.config.flooding_severe_rate_multiplier,
-                flooding_sustained_overload_s=self.config.flooding_sustained_overload_s,
-                flooding_recovery_rate_multiplier=self.config.flooding_recovery_rate_multiplier,
-                flooding_recovery_hold_s=self.config.flooding_recovery_hold_s,
-                flooding_token_refill_rate_pps=self.config.flooding_token_refill_rate_pps,
-                flooding_token_bucket_capacity=self.config.flooding_token_bucket_capacity,
             )
-            self.rules[node_id].advance_flood_defense(self.context.clock.now_s)
         return self.nodes[node_id]
 
     def _application_direction(self, src_id: int, dst_id: int) -> str:
@@ -863,16 +850,6 @@ class PlatformRuntime:
         )
         self._tick_index += 1
         now_s = self.context.clock.now_s
-        for node_id in sorted(self.rules):
-            detection, snapshot = self.rules[node_id].advance_flood_defense(now_s)
-            if snapshot["transitioned"]:
-                state_event = self._emit_flood_transition(
-                    self.nodes[node_id], snapshot
-                )
-                if detection is not None:
-                    self._handle_detection(
-                        self.nodes[node_id], None, detection, state_event["event_id"]
-                    )
         if self.security_coordinator is not None:
             self.security_coordinator.advance(now_s)
         self.attack_scheduler.update(now_s)
@@ -1960,13 +1937,9 @@ class PlatformRuntime:
 
         if outcome.decode_success:
             self.packet_accounting.arrived(frame, replay_record, emission)
-            rule_engine = self.rules[receiver.node_id]
-            previous_flood_state = rule_engine.flood_defense_snapshot(
-                self.context.clock.now_s
-            )["state"]
-            arrival_detection, arrival_statistics = rule_engine.record_arrival(
-                self.context.clock.now_s
-            )
+            arrival_detection, arrival_statistics = self.rules[
+                receiver.node_id
+            ].record_arrival(self.context.clock.now_s)
             self.receiver_rate_observations.arrival(receiver.node_id, self.context.clock.now_s, arrival_statistics)
             rx_event = build_event(
                 self.context,
@@ -1991,40 +1964,19 @@ class PlatformRuntime:
             if frame.runtime_attack_id:
                 self._attack_event_ids.add(rx_event["event_id"])
             self._metric_totals["rx_success"] += 1
-            if arrival_statistics["dos_defense_state"] != previous_flood_state:
-                self._emit_flood_transition(
-                    receiver,
-                    {
-                        "transition_from": previous_flood_state,
-                        "transition_to": arrival_statistics["dos_defense_state"],
-                        "rate_pps": arrival_statistics["packet_rate_pps"],
-                    },
-                )
             if arrival_detection is not None:
                 self._handle_detection(
                     receiver, frame, arrival_detection, rx_event["event_id"]
                 )
             received = ReceivedFrame(frame, observation, self.context.clock.now_s)
             rejected_at_ingress = False
-            pre_auth_decision = rule_engine.admit_flood_pre_auth(
-                self.context.clock.now_s,
-                frame.link_sender_id,
-                frame.link_id,
-                rx_event["event_id"],
-            )
-            if not pre_auth_decision.allowed:
-                receiver.drop_count += 1
-                self._record_attack_blocked(frame)
-                self._mark_report_failed_from_frame(frame)
-                self._emit_rate_limit_admission_drop(
-                    receiver,
-                    frame,
-                    pre_auth_decision,
-                    stage="PRE_AUTH_RATE_LIMIT",
-                    evidence_event_id=rx_event["event_id"],
-                )
-                rejected_at_ingress = True
-            else:
+            if (
+                not frame.encrypted
+                and self.application_auth.applies_to(frame.packet_type)
+            ):
+                # Receiver-total arrival accounting above deliberately sees
+                # every decoded frame.  Plaintext business traffic is then
+                # authenticated before it can consume the normal RX queue.
                 opened = self.crypto.open(frame, receiver.node_id)
                 application_verification = self._application_verification(
                     frame, opened
@@ -2033,24 +1985,10 @@ class PlatformRuntime:
                     opened.auth_result != "PASS"
                     or not application_verification.passed
                 ):
-                    rule_engine.finalize_flood_pre_auth(
-                        self.context.clock.now_s,
-                        frame.link_sender_id,
-                        frame.link_id,
-                        rx_event["event_id"],
-                    )
                     if not application_verification.passed:
-                        actual_application_hmac_failure = (
-                            opened.auth_result == "PASS"
-                            and self.application_auth.applies_to(frame.packet_type)
-                            and application_verification.result
-                            in {"FAIL", "UNKNOWN_DEVICE", "MISSING"}
+                        self._record_application_hmac_rejection(
+                            frame, application_verification
                         )
-                        if actual_application_hmac_failure:
-                            rule_engine.record_flood_hmac_rejection()
-                            self._record_application_hmac_rejection(
-                                frame, application_verification
-                            )
                     self._inspect_received_security(
                         receiver, received, opened, application_verification
                     )
@@ -2059,35 +1997,12 @@ class PlatformRuntime:
                     self._mark_report_failed_from_frame(frame)
                     rejected_at_ingress = True
                 else:
-                    rule_engine.release_flood_pre_auth(
-                        self.context.clock.now_s,
-                        frame.link_sender_id,
-                        frame.link_id,
-                        rx_event["event_id"],
-                    )
                     received.application_hmac_checked = True
                     received.application_hmac_result = application_verification.result
                     received.application_hmac_failure_reason = (
                         application_verification.failure_reason
                     )
                     received.application_hmac_key_id = application_verification.key_id
-                    if application_verification.result != "NOT_APPLICABLE":
-                        post_auth_decision = rule_engine.admit_flood_post_auth(
-                            self.context.clock.now_s,
-                            int(frame.claimed_src_id),
-                        )
-                        if not post_auth_decision.allowed:
-                            receiver.drop_count += 1
-                            self._record_attack_blocked(frame)
-                            self._mark_report_failed_from_frame(frame)
-                            self._emit_rate_limit_admission_drop(
-                                receiver,
-                                frame,
-                                post_auth_decision,
-                                stage="POST_AUTH_RATE_LIMIT",
-                                evidence_event_id=rx_event["event_id"],
-                            )
-                            rejected_at_ingress = True
             if not rejected_at_ingress and not receiver.enqueue_rx(received):
                 self._mark_report_failed_from_frame(frame)
         else:
@@ -2134,40 +2049,6 @@ class PlatformRuntime:
                 AttackOutcomePolicy.injected(replay_record)
             AttackOutcomePolicy.refresh(replay_record)
         self._record_attack_air_outcome(frame, outcome.decode_success)
-
-    def _emit_rate_limit_admission_drop(
-        self,
-        receiver: Node,
-        frame: Frame,
-        decision: Any,
-        *,
-        stage: str,
-        evidence_event_id: str,
-    ) -> None:
-        self._append_event(
-            build_event(
-                self.context,
-                EventType.DEFENSE_RESULT,
-                receiver,
-                message=frame,
-                availability={
-                    "payload_available": False,
-                    "phy_available": False,
-                    "missing_reason": "RATE_LIMIT_ADMISSION_DROP",
-                },
-                extensions={
-                    "rate_limit_admission": {
-                        "stage": stage,
-                        "allowed": False,
-                        "reason": decision.reason,
-                        "bucket_scope": decision.bucket_scope,
-                        "tokens_remaining": decision.tokens_remaining,
-                        "evidence_event_id": evidence_event_id,
-                    }
-                },
-                leader_id=self.leader_node_id,
-            )
-        )
 
     def _transmit_replay_frame(
         self,
@@ -2456,32 +2337,6 @@ class PlatformRuntime:
         if detection:
             self._handle_detection(node, frame, detection, evidence_event["event_id"])
 
-    def _emit_flood_transition(
-        self, node: Node, snapshot: dict[str, object]
-    ) -> dict[str, Any]:
-        to_state = str(snapshot["transition_to"])
-        event = build_event(
-            self.context,
-            EventType.NODE_STATE,
-            node,
-            availability={
-                "payload_available": False,
-                "phy_available": False,
-                "missing_reason": "FLOOD_DEFENSE_TRANSITION",
-            },
-            extensions={
-                "flood_defense_transition": {
-                    "from_state": snapshot["transition_from"],
-                    "to_state": to_state,
-                    "packet_rate_pps": snapshot["rate_pps"],
-                    "rate_limit_active": to_state == "LIMITING",
-                }
-            },
-            leader_id=self.leader_node_id,
-        )
-        self._append_event(event)
-        return event
-
     def _handle_detection(
         self,
         node: Node,
@@ -2541,12 +2396,6 @@ class PlatformRuntime:
             session_id=frame.session_id if frame else None,
             requested_time_s=self.context.clock.now_s,
             reason=detection.label,
-            outcome_scope=(
-                "RECEIVER_FLOOD_GUARD"
-                if detection.label == "DOS"
-                and detection.recommended_action == DefenseAction.RATE_LIMIT
-                else None
-            ),
         )
         defense_result = self.defense.execute(request, node, self.context.clock.now_s)
         result_dict = defense_result.to_dict()
@@ -2782,11 +2631,7 @@ class PlatformRuntime:
             ):
                 continue
             record.outcome["detected"] = True
-            if (
-                detection.label == "AUTH_FAILURE"
-                and detection.evidence.get("authentication_layer")
-                == "APPLICATION_HMAC"
-            ):
+            if detection.label == "AUTH_FAILURE":
                 record.outcome["application_hmac_rejected"] = True
                 record.outcome["application_hmac_failure_reason"] = (
                     detection.evidence.get("reason")
@@ -4286,26 +4131,6 @@ class PlatformRuntime:
         )
         return result
 
-    def _flood_defense_resource(self, node_id: int) -> dict[str, Any]:
-        snapshot = self.rules[node_id].flood_defense_snapshot(self.context.clock.now_s)
-        global_bucket = snapshot["buckets"]["receiver_global"]
-        return {
-            "dos_defense_state": snapshot["state"],
-            "packet_rate_pps": snapshot["rate_pps"],
-            "alert_threshold_pps": snapshot["alert_threshold_pps"],
-            "severe_threshold_pps": snapshot["severe_threshold_pps"],
-            "recovery_threshold_pps": snapshot["recovery_threshold_pps"],
-            "rate_limit_active": snapshot["state"] == "LIMITING",
-            "global_bucket_tokens": (
-                None if global_bucket is None else global_bucket["tokens"]
-            ),
-            "pre_auth_limited_count": snapshot["pre_auth_drop_count"],
-            "post_auth_limited_count": snapshot["post_auth_drop_count"],
-            "hmac_rejected_count": snapshot["hmac_rejected_count"],
-            "limiting_started_at_s": snapshot["limiting_started_at_s"],
-            "recovered_at_s": snapshot["recovered_at_s"],
-        }
-
     def observation(self, node_id: int) -> dict[str, Any]:
         if node_id not in self.nodes:
             raise KeyError(f"unknown node: {node_id}")
@@ -4334,7 +4159,6 @@ class PlatformRuntime:
             "model_health": {
                 name: adapter.health() for name, adapter in self.model_adapters.items()
             },
-            "defense_resource": self._flood_defense_resource(node_id),
         }
 
     def rl_observation(self, node_id: int) -> dict[str, Any]:
@@ -4479,7 +4303,6 @@ class PlatformRuntime:
                 if link_id in self.phy.states
             }
         )
-        flood_resource = self._flood_defense_resource(node_id)
         return {
             "schema_version": SCHEMA_VERSION,
             "run_id": self.run_id,
@@ -4540,13 +4363,11 @@ class PlatformRuntime:
                 "current_channel": channels[0] if len(channels) == 1 else channels,
             },
             "defense_resource": {
-                **flood_resource,
                 "active_actions": {
                     "rate_limited_peer_ids": sorted(node.rate_limited_peer_ids),
                     "isolated_peer_ids": sorted(node.isolated_peer_ids),
                 },
-                "rate_limit_state": bool(node.rate_limited_peer_ids)
-                or flood_resource["rate_limit_active"],
+                "rate_limit_state": bool(node.rate_limited_peer_ids),
                 "isolated_data_source": (
                     sorted(node.isolated_peer_ids)
                     if node.isolated_peer_ids

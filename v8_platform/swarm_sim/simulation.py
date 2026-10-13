@@ -7,7 +7,6 @@ from dataclasses import asdict, dataclass, field, is_dataclass
 import hashlib
 import heapq
 import json
-import math
 import random
 from typing import Any
 from uuid import uuid4
@@ -121,12 +120,6 @@ class RunConfig:
     traffic_statistics_window_s: float = 1.0
     flooding_packet_rate_threshold_pps: float = 8.0
     flooding_detection_enabled: bool = True
-    flooding_severe_rate_multiplier: float = 1.5
-    flooding_sustained_overload_s: float = 0.5
-    flooding_recovery_rate_multiplier: float = 0.7
-    flooding_recovery_hold_s: float = 2.0
-    flooding_token_refill_rate_pps: float = 8.0
-    flooding_token_bucket_capacity: float = 12.0
     replay_timestamp_freshness_s: float = 2.0
     replay_reorder_window_size: int = 32
     security_summary_window_s: float = 0.5
@@ -169,27 +162,6 @@ class RunConfig:
             raise ValueError("traffic_statistics_window_s must be positive")
         if self.flooding_packet_rate_threshold_pps <= 0:
             raise ValueError("flooding_packet_rate_threshold_pps must be positive")
-        dos_defense_fields = (
-            "flooding_severe_rate_multiplier",
-            "flooding_sustained_overload_s",
-            "flooding_recovery_rate_multiplier",
-            "flooding_recovery_hold_s",
-            "flooding_token_refill_rate_pps",
-            "flooding_token_bucket_capacity",
-        )
-        for field_name in dos_defense_fields:
-            value = getattr(self, field_name)
-            if (
-                not isinstance(value, (int, float))
-                or isinstance(value, bool)
-                or not math.isfinite(value)
-                or value <= 0
-            ):
-                raise ValueError(f"{field_name} must be a positive number")
-        if self.flooding_severe_rate_multiplier < 1:
-            raise ValueError("flooding_severe_rate_multiplier must be at least 1")
-        if self.flooding_recovery_rate_multiplier >= 1:
-            raise ValueError("flooding_recovery_rate_multiplier must be below 1")
         if self.replay_timestamp_freshness_s <= 0:
             raise ValueError("replay_timestamp_freshness_s must be positive")
         if self.replay_reorder_window_size < 1:
@@ -297,17 +269,6 @@ class RunConfig:
         # disabling a detector changes emitted behavior and remains in the hash.
         if self.flooding_detection_enabled:
             semantic_config.pop("flooding_detection_enabled", None)
-        dos_defaults = {
-            "flooding_severe_rate_multiplier": 1.5,
-            "flooding_sustained_overload_s": 0.5,
-            "flooding_recovery_rate_multiplier": 0.7,
-            "flooding_recovery_hold_s": 2.0,
-            "flooding_token_refill_rate_pps": 8.0,
-            "flooding_token_bucket_capacity": 12.0,
-        }
-        for field_name, default in dos_defaults.items():
-            if semantic_config[field_name] == default:
-                semantic_config.pop(field_name)
         semantic_config["attack_specs"] = canonical_plans(
             self.attack_specs if attack_plans is None else attack_plans,
             identity_field="attack_id",

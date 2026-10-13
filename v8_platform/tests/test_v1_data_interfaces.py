@@ -55,80 +55,10 @@ def test_exported_dataset_passes_validator(tmp_path):
     runtime = PlatformRuntime(RunConfig(duration_s=0.6), run_id="export")
     runtime.run_to_completion()
     runtime.export_dataset(tmp_path)
-    run = json.loads(
-        (tmp_path / "runs.jsonl").read_text(encoding="utf-8").splitlines()[0]
-    )
-    assert {
-        field_name: run["run_config"][field_name]
-        for field_name in (
-            "flooding_severe_rate_multiplier",
-            "flooding_sustained_overload_s",
-            "flooding_recovery_rate_multiplier",
-            "flooding_recovery_hold_s",
-            "flooding_token_refill_rate_pps",
-            "flooding_token_bucket_capacity",
-        )
-    } == {
-        "flooding_severe_rate_multiplier": 1.5,
-        "flooding_sustained_overload_s": 0.5,
-        "flooding_recovery_rate_multiplier": 0.7,
-        "flooding_recovery_hold_s": 2.0,
-        "flooding_token_refill_rate_pps": 8.0,
-        "flooding_token_bucket_capacity": 12.0,
-    }
     report = DatasetValidator().validate(tmp_path)
     assert report.valid, report.errors
     assert report.counts["events"] == len(runtime.events)
     assert (tmp_path / "events.jsonl").read_text(encoding="utf-8").endswith("\n")
-
-
-def test_schema_3_2_dataset_without_default_dos_fields_keeps_historical_fingerprint(
-    tmp_path,
-):
-    runtime = PlatformRuntime(
-        RunConfig(duration_s=0.2), run_id="historical-schema-3-2"
-    )
-    runtime.run_to_completion()
-    runtime.export_dataset(tmp_path)
-    runs_path = tmp_path / "runs.jsonl"
-    run = json.loads(runs_path.read_text(encoding="utf-8").splitlines()[0])
-    for field_name in (
-        "flooding_severe_rate_multiplier",
-        "flooding_sustained_overload_s",
-        "flooding_recovery_rate_multiplier",
-        "flooding_recovery_hold_s",
-        "flooding_token_refill_rate_pps",
-        "flooding_token_bucket_capacity",
-    ):
-        run["run_config"].pop(field_name)
-    run["config_fingerprint"] = (
-        "499e62972d8b076303cbd2df1d28809dbe9b09d6f6a8c51c37c72fa1e26112b9"
-    )
-    runs_path.write_text(json.dumps(run) + "\n", encoding="utf-8")
-
-    report = DatasetValidator().validate(tmp_path)
-
-    assert report.valid, report.errors
-
-
-@pytest.mark.parametrize(
-    ("field_name", "non_default"),
-    [
-        ("flooding_severe_rate_multiplier", 2.0),
-        ("flooding_sustained_overload_s", 0.75),
-        ("flooding_recovery_rate_multiplier", 0.6),
-        ("flooding_recovery_hold_s", 3.0),
-        ("flooding_token_refill_rate_pps", 9.0),
-        ("flooding_token_bucket_capacity", 13.0),
-    ],
-)
-def test_non_default_dos_field_changes_semantic_fingerprint(
-    field_name: str, non_default: float
-):
-    baseline = RunConfig().semantic_fingerprint()
-    overridden = RunConfig(**{field_name: non_default}).semantic_fingerprint()
-
-    assert overridden != baseline
 
 
 def test_validator_catches_truth_leak_in_online_features(tmp_path):

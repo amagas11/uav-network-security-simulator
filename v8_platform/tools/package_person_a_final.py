@@ -30,9 +30,6 @@ PORTABLE_FILE_NAMES = {
     "v8_platform/交付清单.md": "v8_platform/delivery_manifest.md",
     "v8_platform/分工安排.md": "v8_platform/work_assignment.md",
     (
-        "v8_platform/docs/前端同学交接_DoS防御展示与改造建议.md"
-    ): "v8_platform/docs/frontend_dos_defense_handoff.md",
-    (
         "person_a_crypto/upstream/docs/person_a/A1-B所需无线观测.md"
     ): "person_a_crypto/upstream/docs/person_a/A1_B_required_wireless_observations.md",
     (

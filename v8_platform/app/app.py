@@ -38,24 +38,6 @@ class CreateRunRequest(BaseModel):
     traffic_statistics_window_s: float = Field(1.0, gt=0)
     flooding_packet_rate_threshold_pps: float = Field(8.0, gt=0)
     flooding_detection_enabled: bool = Field(True, strict=True)
-    flooding_severe_rate_multiplier: float = Field(
-        1.5, ge=1, strict=True, allow_inf_nan=False
-    )
-    flooding_sustained_overload_s: float = Field(
-        0.5, gt=0, strict=True, allow_inf_nan=False
-    )
-    flooding_recovery_rate_multiplier: float = Field(
-        0.7, gt=0, lt=1, strict=True, allow_inf_nan=False
-    )
-    flooding_recovery_hold_s: float = Field(
-        2.0, gt=0, strict=True, allow_inf_nan=False
-    )
-    flooding_token_refill_rate_pps: float = Field(
-        8.0, gt=0, strict=True, allow_inf_nan=False
-    )
-    flooding_token_bucket_capacity: float = Field(
-        12.0, gt=0, strict=True, allow_inf_nan=False
-    )
     replay_timestamp_freshness_s: float = Field(2.0, gt=0)
     replay_reorder_window_size: int = Field(32, ge=1)
     security_summary_window_s: float = Field(0.5, gt=0)

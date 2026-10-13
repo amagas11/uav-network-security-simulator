@@ -54,14 +54,10 @@ def test_detector_switch_does_not_change_arrival_statistics():
     for index in range(12):
         event, observed = enabled.record_arrival(index / 100)
         silent, observed_disabled = disabled.record_arrival(index / 100)
-        assert observed["packet_rate_pps"] == observed_disabled["packet_rate_pps"]
-        assert observed["total_packet_count"] == observed_disabled["total_packet_count"]
-        assert observed_disabled["dos_defense_state"] == "NORMAL"
+        assert observed == observed_disabled
         assert silent is None
         if event: alarms.append(event)
-    assert disabled.admit_flood_pre_auth(0.11, 7, "link-7").allowed is True
-    assert disabled.admit_flood_post_auth(0.11, 7).allowed is True
-    assert len(alarms) == 2
+    assert len(alarms) == 1
 
 
 @pytest.mark.parametrize("value", ["false", 0, 1, None])
