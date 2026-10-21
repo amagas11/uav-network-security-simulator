@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass, field, is_dataclass
 import hashlib
 import heapq
 import json
+import math
 import random
 from typing import Any
 from uuid import uuid4
@@ -144,8 +145,46 @@ class RunConfig:
     dataset_maturity: str = "DEVELOPMENT"
     require_formal_security: bool = False
     allow_external_model_observer: bool = False
+    rff_enabled: bool = True
+    rff_policy_mode: str = "OBSERVE_ONLY"
+    rff_enrollment_samples: int = 20
+    rff_quality_threshold: float = 0.45
+    rff_distance_threshold: float = 3.0
+    rff_min_identity_margin: float = 0.5
+    rff_queue_pressure_ratio: float = 0.60
+    rff_strict_hold_s: float = 2.0
+    rff_strict_on_rate_alarm: bool = True
 
     def __post_init__(self) -> None:
+        for name in ("rff_enabled", "rff_strict_on_rate_alarm"):
+            if not isinstance(getattr(self, name), bool):
+                raise ValueError(f"{name} must be boolean")
+        if self.rff_policy_mode not in {"OBSERVE_ONLY", "ENFORCE"}:
+            raise ValueError("rff_policy_mode must be OBSERVE_ONLY or ENFORCE")
+        if (
+            not isinstance(self.rff_enrollment_samples, int)
+            or isinstance(self.rff_enrollment_samples, bool)
+            or self.rff_enrollment_samples < 1
+        ):
+            raise ValueError("rff_enrollment_samples must be a positive integer")
+        for name in (
+            "rff_quality_threshold", "rff_distance_threshold",
+            "rff_min_identity_margin", "rff_queue_pressure_ratio", "rff_strict_hold_s",
+        ):
+            value = getattr(self, name)
+            if (
+                not isinstance(value, (int, float)) or isinstance(value, bool)
+                or not math.isfinite(value)
+            ):
+                raise ValueError(f"{name} must be a finite number")
+            if name in {"rff_quality_threshold", "rff_queue_pressure_ratio"}:
+                if not 0.0 <= value <= 1.0:
+                    raise ValueError(f"{name} must be in [0, 1]")
+            elif name == "rff_min_identity_margin":
+                if value < 0:
+                    raise ValueError(f"{name} must be nonnegative")
+            elif value <= 0:
+                raise ValueError(f"{name} must be positive")
         if not isinstance(self.flooding_detection_enabled, bool):
             raise ValueError("flooding_detection_enabled must be boolean")
         if self.node_count < 2:
@@ -263,8 +302,15 @@ class RunConfig:
         *,
         attack_plans: list[Any] | tuple[Any, ...] | None = None,
         normal_disturbance_plans: list[Any] | tuple[Any, ...] | None = None,
+        include_rff: bool = True,
     ) -> str:
         semantic_config = self.to_dict()
+        # Historical schema-3.2 records predate this additive configuration.
+        if not include_rff:
+            semantic_config = {
+                key: value for key, value in semantic_config.items()
+                if not key.startswith("rff_")
+            }
         # Preserve historical comprehensive-mode fingerprints. Explicitly
         # disabling a detector changes emitted behavior and remains in the hash.
         if self.flooding_detection_enabled:

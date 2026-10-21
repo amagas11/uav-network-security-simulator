@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from copy import deepcopy
 from datetime import datetime
 import json
 import math
@@ -159,7 +160,37 @@ def _validate_object(
                 valid = _validate_object(
                     child, item_ref, f"{field_path}[{index}]", contract, errors
                 ) and valid
+    if object_name == "RffObservation":
+        vector = value.get("feature_vector")
+        if isinstance(vector, list):
+            expected_size = 0 if value.get("extraction_status") == "UNAVAILABLE" else 8
+            if len(vector) != expected_size:
+                errors.append(f"{path}.feature_vector: expected {expected_size} features")
+                valid = False
+            if any(not _is_number(item) or not math.isfinite(item) for item in vector):
+                errors.append(f"{path}.feature_vector: features must be finite numbers")
+                valid = False
     return valid
+
+
+def _pre_rff_schema(contract: dict[str, Any], *, include_rate_filter: bool = True) -> dict[str, Any]:
+    """Accept the exact historical contract, without relaxing other fields."""
+    legacy = deepcopy(contract)
+    objects = legacy["objects"]
+    objects.pop("RffObservation", None)
+    objects["runs"]["fields"].pop("rff_simulation", None)
+    for name in list(objects["RunConfig"]["fields"]):
+        if name.startswith("rff_"):
+            objects["RunConfig"]["fields"].pop(name)
+    objects["online_features.packet"]["fields"].pop("claimed_link_sender_id", None)
+    objects["online_features.phy"]["fields"].pop("rff_observation", None)
+    for name in ("rff_predicted_device_id", "rff_claimed_link_sender_id",
+                 "rff_distance", "rff_threshold", "rff_reason"):
+        objects["online_features.security_state"]["fields"].pop(name, None)
+    if not include_rate_filter:
+        objects["runs"]["fields"].pop("detection_configuration", None)
+        objects["RunConfig"]["fields"].pop("flooding_detection_enabled", None)
+    return legacy
 
 
 def _named_references(value: Any, names: set[str]) -> list[tuple[str, Any]]:
@@ -208,7 +239,10 @@ class DatasetValidator:
                     raise TypeError("schema root must be an object")
                 if supplied.get("schema_version") != SCHEMA_VERSION:
                     errors.append("schema.json has unsupported schema_version")
-                if supplied != contract:
+                if supplied not in (
+                    contract, _pre_rff_schema(contract),
+                    _pre_rff_schema(contract, include_rate_filter=False),
+                ):
                     errors.append("schema.json does not match the frozen schema contract")
             except (OSError, UnicodeError, json.JSONDecodeError, TypeError) as exc:
                 errors.append(f"schema.json is invalid: {exc}")
@@ -366,6 +400,7 @@ class DatasetValidator:
                     expected_fingerprint = parsed.semantic_fingerprint(
                         attack_plans=attack_plan,
                         normal_disturbance_plans=normal_plan,
+                        include_rff=any(name.startswith("rff_") for name in config),
                     )
                     calibration_hash = (
                         run.get("profiles", {}).get("calibration_profile_hash")

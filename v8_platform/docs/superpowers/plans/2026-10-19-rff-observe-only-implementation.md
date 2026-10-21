@@ -10,6 +10,19 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-14-rff-physical-detection-design.md`
 
+## Execution Status (2026-10-21)
+
+- [x] Task 1: deterministic profiles and receiver observations.
+- [x] Task 2: receiver-local enrollment and identification.
+- [x] Task 3: validated configuration, frame claims, and additive event/schema contracts.
+- [x] Task 4: direct, multi-hop, failure, and queued receive integration.
+- [x] Task 5: copied spoofing, copied/on-path FDI, replay, and flooding observations.
+- [x] Task 6: truth isolation, export validation, legacy compatibility, and regression closure.
+
+The implementation is committed as one integrated feature change rather than the per-task commits suggested below. This avoids intermediate commits with unresolved runtime imports. Final clean-source regression: 662 passed; one third-party test-client deprecation warning. The 12 changed/new source and test files match the canonical working directory byte-for-byte. The clean snapshot excludes personal untracked documents, which otherwise trigger the existing ASCII archive-name guard in the portability test.
+
+Implementation decisions verified during execution: initialize claims in both test and Person-A crypto providers; retain captured hop claims in copied and on-path FDI; preserve a per-frame RFF snapshot through authentication and correlated rule/defense events; let explicitly configured external RFF adapters replace template identification; use matching enrollment/normal-reception noise variance; canonicalize run-scoped observation IDs in reproducibility comparisons. See `docs/rff_observe_only_guide.md` for data flow, field meanings, configuration, limitations, and verification evidence.
+
 ## Global Constraints
 
 - Do not place `actual_transmitter_id`, attack labels, attack plans, or noiseless device baselines in online events.

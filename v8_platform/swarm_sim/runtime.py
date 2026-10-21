@@ -49,6 +49,7 @@ from .receiver_observations import ReceiverRateObservations
 from .telemetry_measurement import measured_payload
 from .events import build_event
 from .network import DirectedLink, FormationTopology
+from .rff import RFF_FEATURE_SCHEMA, RffService
 from .normal import (
     NormalDisturbancePlan,
     NormalDisturbanceRecord,
@@ -100,6 +101,8 @@ class PlatformRuntime:
         self.config = deepcopy(
             config if isinstance(config, RunConfig) else RunConfig.from_dict(config)
         )
+        if self.config.rff_policy_mode == "ENFORCE":
+            raise ValueError("RFF_ENFORCEMENT_NOT_IMPLEMENTED")
         self._calibration_profile = calibration_profile
         if calibration_profile is None and (
             self.config.data_source_kind != "simulation"
@@ -138,6 +141,25 @@ class PlatformRuntime:
             self.config.seed, self.roles.keys()
         )
         self.topology = FormationTopology(self.roles)
+        self._rff_template_identifier_enabled = "rff" not in (model_adapters or {})
+        self.rff_service = None
+        if self.config.rff_enabled:
+            self.rff_service = RffService(
+                self.context.rng,
+                enrollment_samples=self.config.rff_enrollment_samples,
+                quality_threshold=self.config.rff_quality_threshold,
+                distance_threshold=self.config.rff_distance_threshold,
+                min_identity_margin=self.config.rff_min_identity_margin,
+            )
+            for node in self.nodes.values():
+                self.rff_service.register_device(node.node_id)
+            for link in self.topology.links.values():
+                if (
+                    link.active
+                    and self.nodes[link.src_id].role != NodeRole.EXTERNAL
+                    and self.nodes[link.dst_id].role != NodeRole.EXTERNAL
+                ):
+                    self.rff_service.enroll(receiver_id=link.dst_id, device_id=link.src_id)
         self._observable_link_ids: dict[str, str] = {}
         self._internal_link_ids: dict[str, str] = {}
         self._observable_session_ids: dict[str, str] = {}
@@ -388,6 +410,8 @@ class PlatformRuntime:
                 position_xyz_m=(110.0, 35.0, 90.0),
                 queue_capacity=self.config.queue_capacity,
             )
+            if self.rff_service is not None:
+                self.rff_service.register_device(node_id)
             self.rules[node_id] = DeterministicRuleEngine(
                 self.config.replay_reorder_window_size,
                 replay_timestamp_freshness_s=self.config.replay_timestamp_freshness_s,
@@ -1625,6 +1649,7 @@ class PlatformRuntime:
         message.runtime_attack_id = record.plan.attack_id
         message.application_size_bytes = serialized_application_size(message.payload)
         frame = self.crypto.protect(message, attacker_id, target, link.link_id, 0)
+        frame.claimed_link_sender_id = original.claimed_link_sender_id
         frame.observable_link_id = self.observable_link_id(link.link_id)
         frame.observable_session_id = original.observable_session_id
         frame.runtime_attack_id = record.plan.attack_id
@@ -1815,6 +1840,8 @@ class PlatformRuntime:
                     message.key_epoch,
                 )
             return
+        if intent.claimed_link_sender_id is not None:
+            frame.claimed_link_sender_id = intent.claimed_link_sender_id
         if sender.role != NodeRole.EXTERNAL:
             self.rules[receiver_id].activate_session(
                 sender.node_id,
@@ -1871,6 +1898,27 @@ class PlatformRuntime:
         observation["rf_sample_ref"] = self._rf_sample_bindings.get(
             (frame.message_id, link.link_id)
         )
+        rff_security_state = {}
+        if self.rff_service is not None:
+            rff_observation = self.rff_service.observe(
+                actual_device_id=sender.node_id,
+                receiver_id=receiver.node_id,
+                sim_time_s=self.context.clock.now_s,
+                sinr_db=observation.get("sinr_db"),
+                measurement_quality=observation.get("measurement_quality"),
+                sample_id=self.context.ids.next("rff"),
+            )
+            observation["rff_observation"] = rff_observation.to_online_dict()
+            # A configured RFF adapter replaces the baseline identifier; its
+            # asynchronous result retains the existing model-state semantics.
+            if self._rff_template_identifier_enabled:
+                rff_result = self.rff_service.identify(
+                    receiver.node_id, frame.claimed_link_sender_id, rff_observation,
+                )
+                rff_security_state = rff_result.to_security_state()
+                rff_security_state["rff_last_update_s"] = self.context.clock.now_s
+                for name, value in rff_security_state.items():
+                    setattr(receiver, name, value)
         observable_extensions = deepcopy(frame.extensions)
         tx_event = build_event(
             self.context,
@@ -1910,6 +1958,7 @@ class PlatformRuntime:
                 self._metric_totals['rx_success'] += 1
                 capture_event = build_event(self.context, EventType.RX_SUCCESS, receiver,
                     message=frame, phy=observation,
+                    security_state=rff_security_state,
                     availability={'payload_available': True, 'phy_available': True, 'missing_reason': None},
                     leader_id=self.leader_node_id)
                 self._append_event(capture_event)
@@ -1921,7 +1970,9 @@ class PlatformRuntime:
                 if modified_record is not None:
                     replacement.runtime_attack_id = record.plan.attack_id
                     self._bind_attack_message(record, replacement.message_id)
-                    replacement_status = receiver.enqueue_forward(TransmissionIntent(replacement, 1))
+                    replacement_status = receiver.enqueue_forward(TransmissionIntent(
+                        replacement, 1, claimed_link_sender_id=frame.claimed_link_sender_id,
+                    ))
                     self.packet_accounting.causal['interceptions'].append({
                         'message_id': replacement.message_id, 'attack_id': record.plan.attack_id,
                         'attacker_id': receiver.node_id, 'source_id': sender.node_id,
@@ -1931,7 +1982,9 @@ class PlatformRuntime:
                         'mode': 'ON_PATH_INTERCEPTION_REPLACEMENT', 'original_target_delivery_suppressed': True,
                         'replacement_emission_id': None, 'replacement_sent_time_s': None})
                 else:
-                    receiver.enqueue_forward(TransmissionIntent(replacement, 1))
+                    receiver.enqueue_forward(TransmissionIntent(
+                        replacement, 1, claimed_link_sender_id=frame.claimed_link_sender_id,
+                    ))
             # Original can only arrive at the controlled relay, never at target.
             return
 
@@ -1947,6 +2000,7 @@ class PlatformRuntime:
                 receiver,
                 message=frame,
                 phy=observation,
+                security_state=rff_security_state,
                 traffic={
                     "latency_ms": outcome.latency_ms,
                     "throughput_mbps": outcome.throughput_mbps,
@@ -1968,7 +2022,10 @@ class PlatformRuntime:
                 self._handle_detection(
                     receiver, frame, arrival_detection, rx_event["event_id"]
                 )
-            received = ReceivedFrame(frame, observation, self.context.clock.now_s)
+            received = ReceivedFrame(
+                frame, observation, self.context.clock.now_s,
+                rff_security_state=deepcopy(rff_security_state),
+            )
             rejected_at_ingress = False
             if (
                 not frame.encrypted
@@ -2012,6 +2069,7 @@ class PlatformRuntime:
                 receiver,
                 message=frame,
                 phy=observation,
+                security_state=rff_security_state,
                 availability={
                     "payload_available": False,
                     "phy_available": True,
@@ -2109,6 +2167,7 @@ class PlatformRuntime:
             application_hmac_key_id=application_verification.key_id,
         )
         application_authenticated = application_verification.passed
+        security_state.update(received.rff_security_state)
         fully_authenticated = (
             security_state["auth_result"] == "PASS"
             and application_authenticated
@@ -2352,6 +2411,17 @@ class PlatformRuntime:
         detection = self._adjudicate_detection(node, detection)
         if detection.high_certainty:
             self._rule_high_certainty_evidence_ids.add(evidence_event_id)
+        evidence = next(
+            (event for event in reversed(self.events) if event["event_id"] == evidence_event_id),
+            None,
+        )
+        rff_security_state = {
+            name: value
+            for name, value in (
+                evidence["online_features"]["security_state"].items() if evidence else ()
+            )
+            if name.startswith("rff_")
+        }
         result = ModelResult(
             schema_version=SCHEMA_VERSION,
             run_id=self.run_id,
@@ -2375,6 +2445,7 @@ class PlatformRuntime:
             EventType.MODEL_RESULT,
             node,
             message=frame,
+            security_state=rff_security_state,
             availability={
                 "payload_available": False,
                 "phy_available": False,
@@ -2414,6 +2485,7 @@ class PlatformRuntime:
             EventType.DEFENSE_RESULT,
             node,
             message=frame,
+            security_state=rff_security_state,
             availability={
                 "payload_available": False,
                 "phy_available": False,
@@ -3461,6 +3533,21 @@ class PlatformRuntime:
             attack_plans=attacks,
             normal_disturbance_plans=normal,
         )
+        record["rff_simulation"] = {
+            "enabled": self.config.rff_enabled,
+            "policy_mode": self.config.rff_policy_mode,
+            "feature_schema": RFF_FEATURE_SCHEMA,
+            "provider": "SIMULATED_FEATURE_TEMPLATE",
+            "identification_provider": (
+                "NEAREST_TEMPLATE" if self._rff_template_identifier_enabled
+                else "EXTERNAL_MODEL_ADAPTER"
+            ),
+            "calibration_status": "UNCALIBRATED_BASELINE",
+            "enrollment_samples": self.config.rff_enrollment_samples,
+            "quality_threshold": self.config.rff_quality_threshold,
+            "distance_threshold": self.config.rff_distance_threshold,
+            "min_identity_margin": self.config.rff_min_identity_margin,
+        }
         all_roles = {
             str(node_id): node.role.value for node_id, node in sorted(self.nodes.items())
         }
@@ -4532,6 +4619,8 @@ class PlatformRuntime:
                 singular = key[:-1] if isinstance(key, str) and key.endswith("s") else key
                 return [canonicalize_ids(item, singular) for item in value]
             if isinstance(value, str) and isinstance(key, str):
+                if key == "sample_id" and value.startswith("rff-"):
+                    return f"rff-{value.rsplit('-', 1)[-1]}"
                 if key.endswith("link_id"):
                     return self.internal_link_id(value)
                 if key.endswith("session_id"):

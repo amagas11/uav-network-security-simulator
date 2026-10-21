@@ -331,6 +331,7 @@ class TestOnlyAeadCryptoProvider:
             link_id=link_id,
             link_sender_id=sender_id,
             link_receiver_id=receiver_id,
+            claimed_link_sender_id=sender_id,
             protected_payload=protected_payload,
             encrypted=message.encrypt_requested,
             auth_tag=auth_tag,

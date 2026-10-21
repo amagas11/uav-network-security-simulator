@@ -76,6 +76,7 @@ class TransmissionIntent:
     message: Message
     hop_index: int = 0
     replay_frame: "Frame | None" = None
+    claimed_link_sender_id: int | None = None
 
 
 @dataclass(slots=True)
@@ -106,6 +107,7 @@ class Frame:
     application_direction: str | None = None
     app_hmac_tag: str | None = None
     app_hmac_key_id: str | None = None
+    claimed_link_sender_id: int | None = None
 
     def clone_for_replay(self) -> "Frame":
         return deepcopy(self)
@@ -123,6 +125,7 @@ class ReceivedFrame:
     application_hmac_result: str | None = None
     application_hmac_failure_reason: str | None = None
     application_hmac_key_id: str | None = None
+    rff_security_state: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,6 +173,11 @@ class Node:
     rff_identity_confidence: float | None = None
     rff_quality: float | None = None
     rff_last_update_s: float | None = None
+    rff_predicted_device_id: int | None = None
+    rff_claimed_link_sender_id: int | None = None
+    rff_distance: float | None = None
+    rff_threshold: float | None = None
+    rff_reason: str | None = None
     rff_anomaly_count: int = 0
     protected_sensitive_count: int = 0
     unprotected_sensitive_count: int = 0
@@ -225,6 +233,11 @@ class Node:
         self.rff_identity_confidence = None
         self.rff_quality = None
         self.rff_last_update_s = None
+        self.rff_predicted_device_id = None
+        self.rff_claimed_link_sender_id = None
+        self.rff_distance = None
+        self.rff_threshold = None
+        self.rff_reason = None
         self.rff_anomaly_count = 0
         self.protected_sensitive_count = 0
         self.unprotected_sensitive_count = 0
