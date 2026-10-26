@@ -37,6 +37,18 @@ def test_health_and_openapi_expose_versioned_service(client):
     assert client.get("/openapi.json").json()["info"]["version"] == "7.0.0"
 
 
+def test_create_run_api_exposes_physical_enforcement_and_opaque_protocol_mode(client):
+    created = _create(client, rff_enabled=True, rff_policy_mode="ENFORCE",
+        rff_enrollment_samples=20, rff_quality_threshold=0.45,
+        rff_distance_threshold=3.0, rff_min_identity_margin=0.5,
+        rff_queue_pressure_ratio=0.6, rff_strict_hold_s=2.0,
+        rff_strict_on_rate_alarm=True, application_layer_available=False)
+    metadata = client.get("/api/runtime").json()["run_metadata"]
+    assert metadata["rff_simulation"]["policy_mode"] == "ENFORCE"
+    assert metadata["run_config"]["application_layer_available"] is False
+    assert created["run"]["state"] == "INITIALIZED"
+
+
 def test_current_run_endpoint_distinguishes_reachable_idle_service(client):
     previous = sim_manager.runtime
     sim_manager.runtime = None

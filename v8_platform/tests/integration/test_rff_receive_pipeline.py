@@ -38,9 +38,25 @@ def test_invalid_rff_configuration_is_rejected(name, value):
         RunConfig(**{name: value})
 
 
-def test_phase_one_runtime_rejects_unimplemented_enforcement():
-    with pytest.raises(ValueError, match="RFF_ENFORCEMENT_NOT_IMPLEMENTED"):
-        PlatformRuntime(RunConfig(rff_policy_mode="ENFORCE"))
+def test_runtime_supports_enforcement_with_synchronous_identifier():
+    runtime = PlatformRuntime(RunConfig(rff_policy_mode="ENFORCE"))
+    assert runtime.config.rff_policy_mode == "ENFORCE"
+
+
+def test_enforcement_rejects_disabled_or_asynchronous_identification():
+    with pytest.raises(ValueError, match="RFF_ENFORCEMENT_REQUIRES_RFF"):
+        PlatformRuntime(RunConfig(rff_enabled=False, rff_policy_mode="ENFORCE"))
+    with pytest.raises(ValueError, match="RFF_ENFORCEMENT_REQUIRES_SYNCHRONOUS_IDENTIFIER"):
+        PlatformRuntime(RunConfig(rff_policy_mode="ENFORCE"), model_adapters={"rff": None})
+
+
+def test_application_visibility_is_validated_roundtripped_and_fingerprinted():
+    visible = RunConfig(application_layer_available=True)
+    opaque = RunConfig(application_layer_available=False)
+    assert visible.semantic_fingerprint() != opaque.semantic_fingerprint()
+    assert RunConfig.from_dict(opaque.to_dict()).application_layer_available is False
+    with pytest.raises(ValueError, match="application_layer_available"):
+        RunConfig(application_layer_available="false")
 
 
 def _message():

@@ -164,6 +164,9 @@ def _security_state(node: Node) -> dict[str, Any]:
         "rff_distance": node.rff_distance,
         "rff_threshold": node.rff_threshold,
         "rff_reason": node.rff_reason,
+        "rff_policy_state": node.rff_policy_state,
+        "rff_strict_since_s": node.rff_strict_since_s,
+        "rff_clear_since_s": node.rff_clear_since_s,
     }
 
 
@@ -295,6 +298,20 @@ def build_event(
         },
         "extensions": deepcopy(extensions or {}),
     }
+    if (
+        not context.config.application_layer_available and message is not None
+        and message.packet_type not in {"SECURITY_REPORT", "SECURITY_SUMMARY", "SKG_CONTROL"}
+    ):
+        packet = event["online_features"]["packet"]
+        for name in packet:
+            if name not in {"claimed_link_sender_id", "link_id", "packet_size_bytes"}:
+                packet[name] = None
+        event["availability"]["payload_available"] = False
+        event["availability"]["missing_reason"] = "APPLICATION_PROTOCOL_UNAVAILABLE"
+        event["extensions"] = {
+            name: value for name, value in event["extensions"].items()
+            if name in {"rff_decision", "air_emission_ref", "defense_result", "source_event_ids"}
+        }
     assert_online_truth_free(event)
     return event
 

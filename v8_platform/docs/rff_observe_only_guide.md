@@ -4,7 +4,7 @@
 
 已完成实施计划的第一阶段：生成模拟射频指纹、建立接收端合法模板、逐跳识别物理发射源，并记录结果。默认启用 `rff_enabled=True`、`rff_policy_mode="OBSERVE_ONLY"`。
 
-这一阶段只观察。现有 HMAC、重放检查、业务检测、入队、丢包和业务执行仍按原有逻辑运行。身份异常自动丢弃、DoS 压力触发严格白名单、告警上报和物理层防御指标属于第二阶段。现在设置 `ENFORCE` 会明确报错 `RFF_ENFORCEMENT_NOT_IMPLEMENTED`。
+默认模式只观察。现有 HMAC、重放检查、业务检测、入队、丢包和业务执行仍按原有逻辑运行。2026-10-26 已加入第二阶段的 `ENFORCE` 准入防御、DoS 压力严格白名单、真实链路上报、无上层协议模式及独立物理评估，详见 [第二阶段说明](rff_enforcement_guide.md)。本篇主要介绍基础观测和默认观察模式。
 
 ## 数据从哪里来
 
@@ -84,7 +84,7 @@
 
 ## 配置与示例
 
-常用配置为 `rff_enabled`、`rff_enrollment_samples`、`rff_quality_threshold`、`rff_distance_threshold` 和 `rff_min_identity_margin`。队列压力及严格模式相关字段已预留，不在本阶段触发防御。配置会参与新运行的语义校验值，旧数据集仍支持按其原有配置验证。
+常用配置为 `rff_enabled`、`rff_enrollment_samples`、`rff_quality_threshold`、`rff_distance_threshold` 和 `rff_min_identity_margin`。队列压力及严格模式相关字段现已用于第二阶段的准入判断，观察模式下不会执行防御。配置会参与新运行的语义校验值，旧数据集仍支持按其原有配置验证。
 
 从 `v8_platform` 目录使用满足项目依赖的 Python 环境运行：
 

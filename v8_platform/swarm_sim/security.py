@@ -73,17 +73,8 @@ class DeterministicRuleEngine:
         """Count every successfully decoded arrival before application HMAC."""
 
         self._arrivals.append(float(sim_time_s))
-        cutoff = float(sim_time_s) - self.traffic_window_s
-        while self._arrivals and self._arrivals[0] < cutoff:
-            self._arrivals.popleft()
-        count = len(self._arrivals)
-        rate = count / self.traffic_window_s
-        statistics: dict[str, float | int] = {
-            "packet_rate_pps": round(rate, 6),
-            "total_packet_count": count,
-            "statistics_window_s": self.traffic_window_s,
-            "flooding_threshold_pps": self.flooding_threshold_pps,
-        }
+        statistics = self.arrival_statistics(sim_time_s)
+        rate = float(statistics["packet_rate_pps"])
         # Keep the physical arrival accumulator even when this specialized
         # detector is not participating. Authentication/replay are independent.
         if not self.flooding_detection_enabled:
@@ -105,6 +96,21 @@ class DeterministicRuleEngine:
             )
         self._flood_alert_active = over_threshold
         return detection, statistics
+
+    def arrival_statistics(self, sim_time_s: float) -> dict[str, float | int]:
+        """Read and age local arrivals without fabricating a new arrival."""
+        cutoff = float(sim_time_s) - self.traffic_window_s
+        while self._arrivals and self._arrivals[0] < cutoff:
+            self._arrivals.popleft()
+        count = len(self._arrivals)
+        rate = count / self.traffic_window_s
+        statistics: dict[str, float | int] = {
+            "packet_rate_pps": round(rate, 6),
+            "total_packet_count": count,
+            "statistics_window_s": self.traffic_window_s,
+            "flooding_threshold_pps": self.flooding_threshold_pps,
+        }
+        return statistics
 
     def activate_session(
         self,

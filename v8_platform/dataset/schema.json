@@ -225,14 +225,15 @@
         "session_lifecycle_specs": {"name": "session_lifecycle_specs", "type": "array<object>", "required": true, "nullable": false, "description": "Legitimate security-session rotations applied before old-session replay.", "semantic_id": "config.session_lifecycle_specs"},
         "allow_external_model_observer": {"name": "allow_external_model_observer", "type": "boolean", "required": true, "nullable": false, "description": "Research-only override; false for the frozen C online stream.", "semantic_id": "config.external_model_observer"},
         "rff_enabled": {"name": "rff_enabled", "type": "boolean", "required": false, "nullable": false, "description": "Enable simulated receiver fingerprint observations.", "semantic_id": "config.rff_enabled"},
-        "rff_policy_mode": {"name": "rff_policy_mode", "type": "string", "required": false, "nullable": false, "enum": ["OBSERVE_ONLY", "ENFORCE"], "description": "Phase one only implements OBSERVE_ONLY; runtime rejects ENFORCE.", "semantic_id": "config.rff_policy_mode"},
+        "application_layer_available": {"name": "application_layer_available", "type": "boolean", "required": false, "nullable": false, "description": "Whether vendor business protocol parsing is available; false keeps business bytes opaque while platform management protocols remain known.", "semantic_id": "config.application_layer_available"},
+        "rff_policy_mode": {"name": "rff_policy_mode", "type": "string", "required": false, "nullable": false, "enum": ["OBSERVE_ONLY", "ENFORCE"], "description": "Observe decisions without actions, or enforce synchronous receiver-local RFF admission.", "semantic_id": "config.rff_policy_mode"},
         "rff_enrollment_samples": {"name": "rff_enrollment_samples", "type": "integer", "required": false, "nullable": false, "minimum": 1, "description": "Trusted enrollment samples per legal directed neighbor.", "semantic_id": "config.rff_enrollment_samples"},
         "rff_quality_threshold": {"name": "rff_quality_threshold", "type": "number", "required": false, "nullable": false, "minimum": 0, "maximum": 1, "description": "Minimum extraction quality for template identification.", "semantic_id": "config.rff_quality_threshold"},
         "rff_distance_threshold": {"name": "rff_distance_threshold", "type": "number", "required": false, "nullable": false, "exclusiveMinimum": 0, "description": "Uncalibrated normalized template distance threshold.", "semantic_id": "config.rff_distance_threshold"},
         "rff_min_identity_margin": {"name": "rff_min_identity_margin", "type": "number", "required": false, "nullable": false, "minimum": 0, "description": "Minimum separation between first and second nearest template.", "semantic_id": "config.rff_min_identity_margin"},
-        "rff_queue_pressure_ratio": {"name": "rff_queue_pressure_ratio", "type": "number", "required": false, "nullable": false, "minimum": 0, "maximum": 1, "description": "Reserved phase-two receiver queue pressure threshold.", "semantic_id": "config.rff_queue_pressure_ratio"},
-        "rff_strict_hold_s": {"name": "rff_strict_hold_s", "type": "number", "required": false, "nullable": false, "exclusiveMinimum": 0, "description": "Reserved phase-two strict mode hold duration.", "semantic_id": "config.rff_strict_hold_s"},
-        "rff_strict_on_rate_alarm": {"name": "rff_strict_on_rate_alarm", "type": "boolean", "required": false, "nullable": false, "description": "Reserved phase-two rate-alarm strict mode switch.", "semantic_id": "config.rff_strict_on_rate_alarm"},
+        "rff_queue_pressure_ratio": {"name": "rff_queue_pressure_ratio", "type": "number", "required": false, "nullable": false, "minimum": 0, "maximum": 1, "description": "Receiver queue occupancy ratio activating the strict physical whitelist.", "semantic_id": "config.rff_queue_pressure_ratio"},
+        "rff_strict_hold_s": {"name": "rff_strict_hold_s", "type": "number", "required": false, "nullable": false, "exclusiveMinimum": 0, "description": "Continuous pressure-free duration required before leaving strict mode.", "semantic_id": "config.rff_strict_hold_s"},
+        "rff_strict_on_rate_alarm": {"name": "rff_strict_on_rate_alarm", "type": "boolean", "required": false, "nullable": false, "description": "Allow total arrival rate to activate the strict physical whitelist.", "semantic_id": "config.rff_strict_on_rate_alarm"},
         "episode_phases": {"name": "episode_phases", "type": "object", "required": true, "nullable": true, "description": "Evaluator/provenance metadata only; excluded from the semantic fingerprint and online state.", "semantic_id": "config.episode_phases_metadata"},
         "model_recommendation_confidence_threshold": {"name": "model_recommendation_confidence_threshold", "type": "number", "required": false, "nullable": false, "minimum": 0, "maximum": 1, "description": "B-side model recommendation confidence gate.", "semantic_id": "config.model_confidence_gate"},
         "model_recommendation_quality_threshold": {"name": "model_recommendation_quality_threshold", "type": "number", "required": false, "nullable": false, "minimum": 0, "maximum": 1, "description": "B-side model recommendation quality gate.", "semantic_id": "config.model_quality_gate"},
@@ -468,6 +469,22 @@
         "rff_observation": {"name": "rff_observation", "type": "object", "required": false, "nullable": true, "object_ref": "RffObservation", "description": "Noisy feature-level simulated receiver observation, not an IQ sample or payload field.", "semantic_id": "phy.rff_observation"}
       }
     },
+    "RffDecision": {
+      "description": "Receiver-local ingress decision without attack truth or business payload.",
+      "fields": {
+        "identity_result": {"name": "identity_result", "type": "string", "required": true, "nullable": false, "enum": ["MATCH", "MISMATCH", "UNKNOWN", "AMBIGUOUS", "LOW_QUALITY", "UNAVAILABLE"], "description": "Local fingerprint identification state.", "semantic_id": "rff_decision.identity"},
+        "policy_state": {"name": "policy_state", "type": "string", "required": true, "nullable": false, "enum": ["NORMAL", "RFF_STRICT_WHITELIST"], "description": "Admission mode at this reception.", "semantic_id": "rff_decision.mode"},
+        "would_drop": {"name": "would_drop", "type": "boolean", "required": true, "nullable": false, "description": "Policy would reject under enforcement.", "semantic_id": "rff_decision.would_drop"},
+        "drop": {"name": "drop", "type": "boolean", "required": true, "nullable": false, "description": "Decoded packet rejected before RX queue admission.", "semantic_id": "rff_decision.drop"},
+        "confirmed_identity_anomaly": {"name": "confirmed_identity_anomaly", "type": "boolean", "required": true, "nullable": false, "description": "Qualified identity anomaly, distinct from protective unverified rejection.", "semantic_id": "rff_decision.confirmed"},
+        "reason": {"name": "reason", "type": "string", "required": true, "nullable": false, "description": "Non-secret policy reason.", "semantic_id": "rff_decision.reason"},
+        "transition": {"name": "transition", "type": "string", "required": true, "nullable": true, "description": "Mode change, if any.", "semantic_id": "rff_decision.transition"},
+        "decision_time_s": {"name": "decision_time_s", "type": "number", "required": true, "nullable": false, "minimum": 0, "description": "Receiver decision simulation time.", "semantic_id": "rff_decision.time"},
+        "quality": {"name": "quality", "type": "number", "required": true, "nullable": true, "minimum": 0, "maximum": 1, "description": "Available extraction quality.", "semantic_id": "rff_decision.quality"},
+        "packet_rate_pps": {"name": "packet_rate_pps", "type": "number", "required": true, "nullable": false, "minimum": 0, "description": "Local all-source decoded arrival rate before filtering.", "semantic_id": "rff_decision.rate"},
+        "queue_ratio": {"name": "queue_ratio", "type": "number", "required": true, "nullable": false, "minimum": 0, "maximum": 1, "description": "Local RX queue occupancy before admission.", "semantic_id": "rff_decision.queue"}
+      }
+    },
     "RffObservation": {
       "description": "Receiver-local simulated fingerprint; no true transmitter or noiseless baseline.",
       "fields": {
@@ -539,7 +556,10 @@
         "rff_claimed_link_sender_id": {"name": "rff_claimed_link_sender_id", "type": "integer", "required": false, "nullable": true, "description": "Observable hop address used in this identification.", "semantic_id": "security.rff_claimed_hop_sender"},
         "rff_distance": {"name": "rff_distance", "type": "number", "required": false, "nullable": true, "minimum": 0, "description": "Nearest normalized template distance.", "semantic_id": "security.rff_distance"},
         "rff_threshold": {"name": "rff_threshold", "type": "number", "required": false, "nullable": true, "exclusiveMinimum": 0, "description": "Uncalibrated configured template acceptance threshold.", "semantic_id": "security.rff_threshold"},
-        "rff_reason": {"name": "rff_reason", "type": "string", "required": false, "nullable": true, "description": "Receiver identification or unavailability reason.", "semantic_id": "security.rff_reason"}
+        "rff_reason": {"name": "rff_reason", "type": "string", "required": false, "nullable": true, "description": "Receiver identification or unavailability reason.", "semantic_id": "security.rff_reason"},
+        "rff_policy_state": {"name": "rff_policy_state", "type": "string", "required": false, "nullable": true, "enum": ["NORMAL", "RFF_STRICT_WHITELIST"], "description": "Receiver-local physical admission mode.", "semantic_id": "security.rff_policy_state"},
+        "rff_strict_since_s": {"name": "rff_strict_since_s", "type": "number", "required": false, "nullable": true, "minimum": 0, "description": "Strict mode entry simulation time.", "semantic_id": "security.rff_strict_since"},
+        "rff_clear_since_s": {"name": "rff_clear_since_s", "type": "number", "required": false, "nullable": true, "minimum": 0, "description": "Start of continuous pressure-free hold.", "semantic_id": "security.rff_clear_since"}
       }
     },
     "online_features.resource_state": {

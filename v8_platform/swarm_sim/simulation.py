@@ -145,6 +145,7 @@ class RunConfig:
     dataset_maturity: str = "DEVELOPMENT"
     require_formal_security: bool = False
     allow_external_model_observer: bool = False
+    application_layer_available: bool = True
     rff_enabled: bool = True
     rff_policy_mode: str = "OBSERVE_ONLY"
     rff_enrollment_samples: int = 20
@@ -156,6 +157,8 @@ class RunConfig:
     rff_strict_on_rate_alarm: bool = True
 
     def __post_init__(self) -> None:
+        if not isinstance(self.application_layer_available, bool):
+            raise ValueError("application_layer_available must be boolean")
         for name in ("rff_enabled", "rff_strict_on_rate_alarm"):
             if not isinstance(getattr(self, name), bool):
                 raise ValueError(f"{name} must be boolean")
@@ -305,6 +308,8 @@ class RunConfig:
         include_rff: bool = True,
     ) -> str:
         semantic_config = self.to_dict()
+        if self.application_layer_available:
+            semantic_config.pop("application_layer_available", None)
         # Historical schema-3.2 records predate this additive configuration.
         if not include_rff:
             semantic_config = {

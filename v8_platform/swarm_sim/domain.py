@@ -178,6 +178,11 @@ class Node:
     rff_distance: float | None = None
     rff_threshold: float | None = None
     rff_reason: str | None = None
+    rff_policy_state: str | None = None
+    rff_strict_since_s: float | None = None
+    rff_clear_since_s: float | None = None
+    opaque_received_count: int = 0
+    opaque_delivered_count: int = 0
     rff_anomaly_count: int = 0
     protected_sensitive_count: int = 0
     unprotected_sensitive_count: int = 0
@@ -238,6 +243,11 @@ class Node:
         self.rff_distance = None
         self.rff_threshold = None
         self.rff_reason = None
+        self.rff_policy_state = None
+        self.rff_strict_since_s = None
+        self.rff_clear_since_s = None
+        self.opaque_received_count = 0
+        self.opaque_delivered_count = 0
         self.rff_anomaly_count = 0
         self.protected_sensitive_count = 0
         self.unprotected_sensitive_count = 0

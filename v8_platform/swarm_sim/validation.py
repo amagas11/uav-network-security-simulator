@@ -178,18 +178,38 @@ def _pre_rff_schema(contract: dict[str, Any], *, include_rate_filter: bool = Tru
     legacy = deepcopy(contract)
     objects = legacy["objects"]
     objects.pop("RffObservation", None)
+    objects.pop("RffDecision", None)
     objects["runs"]["fields"].pop("rff_simulation", None)
+    objects["RunConfig"]["fields"].pop("application_layer_available", None)
     for name in list(objects["RunConfig"]["fields"]):
         if name.startswith("rff_"):
             objects["RunConfig"]["fields"].pop(name)
     objects["online_features.packet"]["fields"].pop("claimed_link_sender_id", None)
     objects["online_features.phy"]["fields"].pop("rff_observation", None)
     for name in ("rff_predicted_device_id", "rff_claimed_link_sender_id",
-                 "rff_distance", "rff_threshold", "rff_reason"):
+                 "rff_distance", "rff_threshold", "rff_reason", "rff_policy_state",
+                 "rff_strict_since_s", "rff_clear_since_s"):
         objects["online_features.security_state"]["fields"].pop(name, None)
     if not include_rate_filter:
         objects["runs"]["fields"].pop("detection_configuration", None)
         objects["RunConfig"]["fields"].pop("flooding_detection_enabled", None)
+    return legacy
+
+
+def _observe_only_rff_schema(contract: dict[str, Any]) -> dict[str, Any]:
+    legacy = deepcopy(contract)
+    legacy["objects"].pop("RffDecision", None)
+    legacy["objects"]["RunConfig"]["fields"].pop("application_layer_available", None)
+    descriptions = {
+        "rff_policy_mode": "Phase one only implements OBSERVE_ONLY; runtime rejects ENFORCE.",
+        "rff_queue_pressure_ratio": "Reserved phase-two receiver queue pressure threshold.",
+        "rff_strict_hold_s": "Reserved phase-two strict mode hold duration.",
+        "rff_strict_on_rate_alarm": "Reserved phase-two rate-alarm strict mode switch.",
+    }
+    for name, description in descriptions.items():
+        legacy["objects"]["RunConfig"]["fields"][name]["description"] = description
+    for name in ("rff_policy_state", "rff_strict_since_s", "rff_clear_since_s"):
+        legacy["objects"]["online_features.security_state"]["fields"].pop(name, None)
     return legacy
 
 
@@ -240,7 +260,7 @@ class DatasetValidator:
                 if supplied.get("schema_version") != SCHEMA_VERSION:
                     errors.append("schema.json has unsupported schema_version")
                 if supplied not in (
-                    contract, _pre_rff_schema(contract),
+                    contract, _observe_only_rff_schema(contract), _pre_rff_schema(contract),
                     _pre_rff_schema(contract, include_rate_filter=False),
                 ):
                     errors.append("schema.json does not match the frozen schema contract")
@@ -535,6 +555,17 @@ class DatasetValidator:
                 if missing_reason is not None and not isinstance(missing_reason, str):
                     errors.append(f"{path}.availability.missing_reason: must be string or null")
 
+            extensions = event.get("extensions", {})
+            if isinstance(extensions, dict) and "rff_decision" in extensions:
+                decision = extensions["rff_decision"]
+                if _validate_object(decision, "RffDecision", f"{path}.extensions.rff_decision", contract, errors):
+                    if decision["drop"] and (not decision["would_drop"] or event_type == "RX_FAILURE"):
+                        errors.append(f"{path}.extensions.rff_decision.drop: no decoded admission opportunity")
+                    if decision["confirmed_identity_anomaly"] and decision["identity_result"] not in {"UNKNOWN", "MISMATCH"}:
+                        errors.append(f"{path}.extensions.rff_decision: unverified identity is not a confirmed anomaly")
+                emission = extensions.get("air_emission_ref")
+                if isinstance(emission, str):
+                    event_reference_checks.append((f"{path}.extensions.air_emission_ref", [emission]))
             if event_type == "MODEL_RESULT":
                 extensions = event.get("extensions")
                 model = extensions.get("model_result") if isinstance(extensions, dict) else None
