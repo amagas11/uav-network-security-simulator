@@ -19,6 +19,11 @@ from .domain import NodeRole
 
 SCHEMA_VERSION = "3.2.0"
 SOFTWARE_VERSION = "platform-v7"
+DETECTION_MODE_SETTINGS = {
+    "APPLICATION_ONLY": (True, False, "OBSERVE_ONLY"),
+    "PHYSICAL_ONLY": (False, True, "ENFORCE"),
+    "COMBINED": (True, True, "ENFORCE"),
+}
 
 
 def runtime_semantic_fingerprint(
@@ -146,6 +151,7 @@ class RunConfig:
     require_formal_security: bool = False
     allow_external_model_observer: bool = False
     application_layer_available: bool = True
+    detection_mode: str | None = None
     rff_enabled: bool = True
     rff_policy_mode: str = "OBSERVE_ONLY"
     rff_enrollment_samples: int = 20
@@ -258,6 +264,21 @@ class RunConfig:
         self.dataset_maturity = str(self.dataset_maturity).upper()
         if self.dataset_maturity not in {"DEVELOPMENT", "PRELIMINARY", "FORMAL"}:
             raise ValueError("dataset_maturity must be DEVELOPMENT, PRELIMINARY, or FORMAL")
+        self.apply_detection_mode()
+
+    def apply_detection_mode(self) -> None:
+        if self.detection_mode is None:
+            return
+        if not isinstance(self.detection_mode, str) or self.detection_mode not in DETECTION_MODE_SETTINGS:
+            raise ValueError("detection_mode must be APPLICATION_ONLY, PHYSICAL_ONLY, COMBINED or null")
+        (self.application_layer_available, self.rff_enabled,
+         self.rff_policy_mode) = DETECTION_MODE_SETTINGS[self.detection_mode]
+
+    @property
+    def effective_detection_mode(self) -> str:
+        flags = (self.application_layer_available, self.rff_enabled, self.rff_policy_mode)
+        return next((mode for mode, settings in DETECTION_MODE_SETTINGS.items()
+                     if settings == flags), "CUSTOM")
 
     @classmethod
     def from_dict(
@@ -308,6 +329,8 @@ class RunConfig:
         include_rff: bool = True,
     ) -> str:
         semantic_config = self.to_dict()
+        # Presets are aliases for the effective switches, not new behavior.
+        semantic_config.pop("detection_mode", None)
         if self.application_layer_available:
             semantic_config.pop("application_layer_available", None)
         # Historical schema-3.2 records predate this additive configuration.

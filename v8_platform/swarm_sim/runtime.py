@@ -102,6 +102,7 @@ class PlatformRuntime:
         self.config = deepcopy(
             config if isinstance(config, RunConfig) else RunConfig.from_dict(config)
         )
+        self.config.apply_detection_mode()
         if self.config.rff_policy_mode == "ENFORCE":
             if not self.config.rff_enabled:
                 raise ValueError("RFF_ENFORCEMENT_REQUIRES_RFF")
@@ -3782,10 +3783,18 @@ class PlatformRuntime:
         record["probe_profile"] = self.probes.profile
         record["application_hmac"] = self.application_auth.provenance()
         record["detection_configuration"] = {
-            "application_hmac": {"enabled": True, "scope": "BASE_SECURITY"},
-            "replay_protection": {"enabled": True, "scope": "BASE_SECURITY"},
+            "mode": self.config.effective_detection_mode,
+            "requested_mode": self.config.detection_mode,
+            "application_hmac": {"enabled": self.config.application_layer_available, "scope": "BASE_SECURITY"},
+            "replay_protection": {"enabled": self.config.application_layer_available, "scope": "BASE_SECURITY"},
+            "management_authentication": {"enabled": True, "scope": "PLATFORM_MANAGEMENT"},
+            "rff": {
+                "enabled": self.config.rff_enabled,
+                "enforcing": self.config.rff_enabled and self.config.rff_policy_mode == "ENFORCE",
+                "policy_mode": self.config.rff_policy_mode,
+            },
             "flooding": {
-                "enabled": self.config.flooding_detection_enabled,
+                "enabled": self.config.application_layer_available and self.config.flooding_detection_enabled,
                 "scope": "RECEIVER_TOTAL_DECODED_ARRIVALS",
                 "window_s": self.config.traffic_statistics_window_s,
                 "threshold_pps": self.config.flooding_packet_rate_threshold_pps,
@@ -4714,6 +4723,7 @@ class PlatformRuntime:
             run_record=self.run_record(),
         )
         evaluation["application_layer_available"] = self.config.application_layer_available
+        evaluation["detection_configuration"] = self.run_record()["detection_configuration"]
         evaluation["physical_layer"] = evaluate_rff(
             self.events, self.attack_scheduler.labels(),
             transmissions=self.packet_accounting.causal["transmissions"],

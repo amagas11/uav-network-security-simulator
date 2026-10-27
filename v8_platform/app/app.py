@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 import re
 from threading import Event, RLock, Thread, current_thread
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
@@ -48,6 +48,7 @@ class CreateRunRequest(BaseModel):
     rff_strict_hold_s: float = Field(2.0, gt=0)
     rff_strict_on_rate_alarm: bool = Field(True, strict=True)
     application_layer_available: bool = Field(True, strict=True)
+    detection_mode: Literal["APPLICATION_ONLY", "PHYSICAL_ONLY", "COMBINED"] | None = None
     replay_timestamp_freshness_s: float = Field(2.0, gt=0)
     replay_reorder_window_size: int = Field(32, ge=1)
     security_summary_window_s: float = Field(0.5, gt=0)

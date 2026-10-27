@@ -49,6 +49,23 @@ def test_create_run_api_exposes_physical_enforcement_and_opaque_protocol_mode(cl
     assert created["run"]["state"] == "INITIALIZED"
 
 
+@pytest.mark.parametrize("mode,app_enabled,rff_enabled", [
+    ("APPLICATION_ONLY", True, False), ("PHYSICAL_ONLY", False, True), ("COMBINED", True, True),
+])
+def test_create_run_supports_atomic_detection_mode_and_reset(client, mode, app_enabled, rff_enabled):
+    _create(client, detection_mode=mode)
+    metadata = client.get("/api/runtime").json()["run_metadata"]
+    assert metadata["run_config"]["application_layer_available"] is app_enabled
+    assert metadata["run_config"]["rff_enabled"] is rff_enabled
+    assert metadata["detection_configuration"]["mode"] == mode
+    assert client.post("/api/runs/reset").status_code == 200
+    assert client.get("/api/runtime").json()["run_metadata"]["detection_configuration"]["mode"] == mode
+
+
+def test_invalid_detection_mode_returns_422(client):
+    assert client.post("/api/runs", json={"detection_mode": "WRONG"}).status_code == 422
+
+
 def test_current_run_endpoint_distinguishes_reachable_idle_service(client):
     previous = sim_manager.runtime
     sim_manager.runtime = None

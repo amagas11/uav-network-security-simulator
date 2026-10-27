@@ -173,9 +173,15 @@ def _validate_object(
     return valid
 
 
+def _pre_detection_mode_schema(contract: dict[str, Any]) -> dict[str, Any]:
+    legacy = deepcopy(contract)
+    legacy["objects"]["RunConfig"]["fields"].pop("detection_mode", None)
+    return legacy
+
+
 def _pre_rff_schema(contract: dict[str, Any], *, include_rate_filter: bool = True) -> dict[str, Any]:
     """Accept the exact historical contract, without relaxing other fields."""
-    legacy = deepcopy(contract)
+    legacy = _pre_detection_mode_schema(contract)
     objects = legacy["objects"]
     objects.pop("RffObservation", None)
     objects.pop("RffDecision", None)
@@ -197,7 +203,7 @@ def _pre_rff_schema(contract: dict[str, Any], *, include_rate_filter: bool = Tru
 
 
 def _observe_only_rff_schema(contract: dict[str, Any]) -> dict[str, Any]:
-    legacy = deepcopy(contract)
+    legacy = _pre_detection_mode_schema(contract)
     legacy["objects"].pop("RffDecision", None)
     legacy["objects"]["RunConfig"]["fields"].pop("application_layer_available", None)
     descriptions = {
@@ -260,7 +266,7 @@ class DatasetValidator:
                 if supplied.get("schema_version") != SCHEMA_VERSION:
                     errors.append("schema.json has unsupported schema_version")
                 if supplied not in (
-                    contract, _observe_only_rff_schema(contract), _pre_rff_schema(contract),
+                    contract, _pre_detection_mode_schema(contract), _observe_only_rff_schema(contract), _pre_rff_schema(contract),
                     _pre_rff_schema(contract, include_rate_filter=False),
                 ):
                     errors.append("schema.json does not match the frozen schema contract")
