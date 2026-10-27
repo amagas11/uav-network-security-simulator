@@ -179,6 +179,12 @@ def _pre_detection_mode_schema(contract: dict[str, Any]) -> dict[str, Any]:
     return legacy
 
 
+def _pre_external_fdi_schema(contract: dict[str, Any]) -> dict[str, Any]:
+    legacy = deepcopy(contract)
+    legacy["objects"]["AttackTruth"]["fields"]["injection_stage"]["enum"] = ["POST_HMAC_PRE_TRANSMISSION"]
+    return legacy
+
+
 def _pre_rff_schema(contract: dict[str, Any], *, include_rate_filter: bool = True) -> dict[str, Any]:
     """Accept the exact historical contract, without relaxing other fields."""
     legacy = _pre_detection_mode_schema(contract)
@@ -255,6 +261,12 @@ class DatasetValidator:
         errors: list[str] = []
         warnings: list[str] = []
         contract = schema_v1()
+        accepted_schemas = []
+        for base in (contract, _pre_external_fdi_schema(contract)):
+            accepted_schemas.extend([
+                base, _pre_detection_mode_schema(base), _observe_only_rff_schema(base),
+                _pre_rff_schema(base), _pre_rff_schema(base, include_rate_filter=False),
+            ])
         schema_path = root / "schema.json"
         if not schema_path.exists():
             errors.append("missing file: schema.json")
@@ -265,10 +277,7 @@ class DatasetValidator:
                     raise TypeError("schema root must be an object")
                 if supplied.get("schema_version") != SCHEMA_VERSION:
                     errors.append("schema.json has unsupported schema_version")
-                if supplied not in (
-                    contract, _pre_detection_mode_schema(contract), _observe_only_rff_schema(contract), _pre_rff_schema(contract),
-                    _pre_rff_schema(contract, include_rate_filter=False),
-                ):
+                if supplied not in accepted_schemas:
                     errors.append("schema.json does not match the frozen schema contract")
             except (OSError, UnicodeError, json.JSONDecodeError, TypeError) as exc:
                 errors.append(f"schema.json is invalid: {exc}")

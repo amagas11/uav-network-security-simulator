@@ -2065,6 +2065,7 @@ class PlatformRuntime:
             received = ReceivedFrame(
                 frame, observation, self.context.clock.now_s,
                 rff_security_state=deepcopy(rff_security_state),
+                rx_event_id=rx_event["event_id"], air_emission_ref=emission,
             )
             rejected_at_ingress = self._apply_rff_admission(
                 receiver, frame, rx_event, rff_decision,
@@ -2375,6 +2376,8 @@ class PlatformRuntime:
                     "failure_reason": application_verification.failure_reason,
                     "key_id": application_verification.key_id,
                 },
+                "source_event_ids": [received.rx_event_id] if received.rx_event_id is not None else [],
+                "air_emission_ref": received.air_emission_ref,
             },
             leader_id=self.leader_node_id,
         )

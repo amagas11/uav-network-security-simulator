@@ -1,0 +1,135 @@
+{
+  "suite_version": "DETECTION_COMPARISON_V1",
+  "base_config": {
+    "duration_s": 6.0, "step_s": 0.2, "auto_traffic": false,
+    "queue_capacity": 128, "tx_service_per_step": 64, "rx_service_per_step": 64,
+    "flooding_packet_rate_threshold_pps": 500,
+    "traffic_specs": [{
+      "source_node_id": 2, "target_node_id": 1, "packet_type": "TELEMETRY",
+      "payload": {"altitude_m": 100}, "start_s": 0.2, "interval_s": 0.4,
+      "count": 6, "session_id": "comparison", "sequence_start": 100
+    }]
+  },
+  "cases": [
+    {
+      "case_id": "NORMAL_MULTIHOP", "name_zh": "正常多跳通信",
+      "purpose_zh": "成员2经领航1到中心0，每跳使用当前发射者身份；物理模式只透明到达。",
+      "check": "NORMAL_MULTIHOP",
+      "config": {"traffic_specs": [{
+        "source_node_id": 2, "target_node_id": 0, "packet_type": "TELEMETRY",
+        "payload": {"altitude_m": 100}, "start_s": 0.2, "interval_s": 0.4,
+        "count": 3, "session_id": "comparison", "sequence_start": 100
+      }]}
+    },
+    {
+      "case_id": "SPOOF_EXTERNAL", "name_zh": "外部复制报文后伪装",
+      "purpose_zh": "外部设备复制合法帧并更改业务源声明，保留合法本跳地址；验证认证或射频准入。",
+      "check": "EXTERNAL_ATTACK",
+      "config": {"attack_specs": [{
+        "attack_family": "SPOOFING", "attack_subtype": "KNOWN_ID_CONFLICT",
+        "scheduled_start_s": 0, "impact_start_s": 0.4, "end_s": 2.8,
+        "attacker_node_id": -1, "target_node_ids": [1],
+        "parameters": {"claimed_src_id": 0, "source_copy_mode": "LEGITIMATE_FRAME_COPY", "legitimate_source_id": 2}
+      }]}
+    },
+    {
+      "case_id": "FDI_EXTERNAL_COPY", "name_zh": "外部修改载荷并额外注入",
+      "purpose_zh": "合法原帧继续发送，外部设备注入保留旧认证字段的修改副本。",
+      "check": "EXTERNAL_ATTACK",
+      "config": {"attack_specs": [{
+        "attack_family": "FDI", "attack_subtype": "TELEMETRY_ABRUPT_CHANGE",
+        "scheduled_start_s": 0, "impact_start_s": 0.4, "end_s": 2.8,
+        "attacker_node_id": -1, "target_node_ids": [1], "target_link_ids": ["link-2-1"],
+        "parameters": {"injection_mode": "CAPTURE_MODIFY_INJECT", "legitimate_source_id": 2, "field": "altitude_m", "absolute_offset": 20}
+      }]}
+    },
+    {
+      "case_id": "FDI_EXTERNAL_REPLACEMENT", "name_zh": "外部拦截后修改替换",
+      "purpose_zh": "受控外部中继拦截原帧并发送修改替代帧，不同时向目标投递原帧与副本。",
+      "check": "EXTERNAL_ATTACK",
+      "config": {"attack_specs": [{
+        "attack_family": "FDI", "attack_subtype": "TELEMETRY_ABRUPT_CHANGE",
+        "scheduled_start_s": 0, "impact_start_s": 0.4, "end_s": 2.8,
+        "attacker_node_id": -1, "target_node_ids": [1], "target_link_ids": ["link-2-1"],
+        "parameters": {"injection_mode": "ON_PATH_INTERCEPTION_REPLACEMENT", "legitimate_source_id": 2, "field": "altitude_m", "absolute_offset": 20}
+      }]}
+    },
+    {
+      "case_id": "REPLAY_EXTERNAL", "name_zh": "外部捕获后重放",
+      "purpose_zh": "业务源2的捕获帧由外部设备重发；比较序列检查和本跳物理身份。",
+      "check": "EXTERNAL_ATTACK",
+      "config": {"traffic_specs": [{
+        "source_node_id": 2, "target_node_id": 0, "packet_type": "TELEMETRY",
+        "payload": {"altitude_m": 100}, "start_s": 0.2, "interval_s": 0.4,
+        "count": 3, "session_id": "comparison", "sequence_start": 100
+      }], "attack_specs": [{
+        "attack_family": "REPLAY", "attack_subtype": "CAPTURE_AND_REPLAY",
+        "scheduled_start_s": 0, "impact_start_s": 0.6, "end_s": 1.4,
+        "attacker_node_id": -1, "target_node_ids": [1]
+      }]}
+    },
+    {
+      "case_id": "FLOODING_EXTERNAL", "name_zh": "外部洪泛与严格模式恢复",
+      "purpose_zh": "目标总到达速率升高；验证认证前接收计数、射频拒绝、严格白名单和空闲恢复。",
+      "check": "FLOODING",
+      "config": {"flooding_packet_rate_threshold_pps": 8, "attack_specs": [{
+        "attack_family": "DOS", "attack_subtype": "FLOODING",
+        "scheduled_start_s": 0, "impact_start_s": 0.2, "end_s": 1.2,
+        "attacker_node_id": -1, "target_node_ids": [1], "intensity": {"value": 100, "unit": "pps"}
+      }]}
+    },
+    {
+      "case_id": "FDI_INTERNAL_POST_HMAC", "name_zh": "合法无线设备在HMAC后篡改",
+      "purpose_zh": "明确使用当前已有的HMAC后篡改路径；射频仍匹配，原有认证可以拒绝。",
+      "check": "INTERNAL_POST_HMAC",
+      "config": {"attack_specs": [{
+        "attack_family": "FDI", "attack_subtype": "OUT_OF_RANGE_VALUE",
+        "scheduled_start_s": 0, "impact_start_s": 0.4, "end_s": 2.8,
+        "attacker_node_id": 2, "target_node_ids": [1], "parameters": {"field": "altitude_m", "value": 5000}
+      }]}
+    },
+    {
+      "case_id": "SIGNED_ABNORMAL_TELEMETRY", "name_zh": "异常业务内容经过正常认证",
+      "purpose_zh": "合法设备直接生成5000米遥测再认证，演示目前缺少独立业务异常规则的边界，不伪称已检出。",
+      "check": "SIGNED_CONTENT_GAP",
+      "config": {"traffic_specs": [{
+        "source_node_id": 2, "target_node_id": 1, "packet_type": "TELEMETRY",
+        "payload": {"altitude_m": 5000}, "start_s": 0.2, "interval_s": 0.4,
+        "count": 1, "session_id": "comparison", "sequence_start": 100
+      }]}
+    },
+    {
+      "case_id": "LOW_SNR", "name_zh": "正常弱信号与低质量指纹",
+      "purpose_zh": "正常信道衰减而不是攻击标签；低质量不能被统计为确认身份攻击。",
+      "check": "LOW_QUALITY",
+      "config": {"normal_disturbance_specs": [{
+        "disturbance_type": "NORMAL_LOW_SNR", "start_s": 0.1, "end_s": 3,
+        "target_link_ids": ["link-2-1"], "parameters": {"attenuation_db": 40}
+      }]}
+    },
+    {
+      "case_id": "REPORT_LINK_RECOVERY", "name_zh": "上报链路断开后恢复",
+      "purpose_zh": "成员2检测洪泛并缓存报告，领航到中心链路恢复后才允许报告到达中心。",
+      "check": "REPORT_RECOVERY",
+      "config": {"flooding_packet_rate_threshold_pps": 8, "attack_specs": [{
+        "attack_family": "DOS", "attack_subtype": "FLOODING",
+        "scheduled_start_s": 0, "impact_start_s": 0.2, "end_s": 1.2,
+        "attacker_node_id": -1, "target_node_ids": [2], "intensity": {"value": 20, "unit": "pps"}
+      }]},
+      "link_actions": [
+        {"at_s": 0, "first_id": 0, "second_id": 1, "active": false},
+        {"at_s": 2, "first_id": 0, "second_id": 1, "active": true}
+      ], "report_source_node_id": 2
+    },
+    {
+      "case_id": "PASSIVE_EAVESDROPPING", "name_zh": "完全被动窃听的不可检测边界",
+      "purpose_zh": "监听者捕获合法无线流量但不发射，不产生射频身份攻击告警。",
+      "check": "PASSIVE_BOUNDARY",
+      "config": {"attack_specs": [{
+        "attack_family": "EAVESDROPPING", "attack_subtype": "PASSIVE_CAPTURE",
+        "scheduled_start_s": 0, "impact_start_s": 0, "end_s": 3,
+        "attacker_node_id": -1, "parameters": {"receiver_radius_m": 1000}
+      }]}
+    }
+  ]
+}

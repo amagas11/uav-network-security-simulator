@@ -126,6 +126,8 @@ class ReceivedFrame:
     application_hmac_failure_reason: str | None = None
     application_hmac_key_id: str | None = None
     rff_security_state: dict[str, Any] = field(default_factory=dict)
+    rx_event_id: str | None = None
+    air_emission_ref: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
