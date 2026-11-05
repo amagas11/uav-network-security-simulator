@@ -887,6 +887,7 @@ class PersonACryptoProvider:
             link_id=link_id,
             link_sender_id=sender_id,
             link_receiver_id=receiver_id,
+            claimed_link_sender_id=sender_id,
             protected_payload={
                 "ciphertext_b64": base64.b64encode(result.ciphertext).decode("ascii"),
                 "algorithm": "AES-256-GCM",
@@ -1026,6 +1027,7 @@ class PersonACryptoProvider:
             link_id=link_id,
             link_sender_id=sender_id,
             link_receiver_id=receiver_id,
+            claimed_link_sender_id=sender_id,
             protected_payload=deepcopy(message.payload),
             encrypted=False,
             auth_tag=None,

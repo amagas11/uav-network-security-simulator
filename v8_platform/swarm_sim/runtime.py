@@ -49,6 +49,8 @@ from .receiver_observations import ReceiverRateObservations
 from .telemetry_measurement import measured_payload
 from .events import build_event
 from .network import DirectedLink, FormationTopology
+from .rff import RFF_FEATURE_SCHEMA, RffService
+from .rff_evaluation import evaluate_rff
 from .normal import (
     NormalDisturbancePlan,
     NormalDisturbanceRecord,
@@ -100,6 +102,12 @@ class PlatformRuntime:
         self.config = deepcopy(
             config if isinstance(config, RunConfig) else RunConfig.from_dict(config)
         )
+        self.config.apply_detection_mode()
+        if self.config.rff_policy_mode == "ENFORCE":
+            if not self.config.rff_enabled:
+                raise ValueError("RFF_ENFORCEMENT_REQUIRES_RFF")
+            if "rff" in (model_adapters or {}):
+                raise ValueError("RFF_ENFORCEMENT_REQUIRES_SYNCHRONOUS_IDENTIFIER")
         self._calibration_profile = calibration_profile
         if calibration_profile is None and (
             self.config.data_source_kind != "simulation"
@@ -138,6 +146,25 @@ class PlatformRuntime:
             self.config.seed, self.roles.keys()
         )
         self.topology = FormationTopology(self.roles)
+        self._rff_template_identifier_enabled = "rff" not in (model_adapters or {})
+        self.rff_service = None
+        if self.config.rff_enabled:
+            self.rff_service = RffService(
+                self.context.rng,
+                enrollment_samples=self.config.rff_enrollment_samples,
+                quality_threshold=self.config.rff_quality_threshold,
+                distance_threshold=self.config.rff_distance_threshold,
+                min_identity_margin=self.config.rff_min_identity_margin,
+            )
+            for node in self.nodes.values():
+                self.rff_service.register_device(node.node_id)
+            for link in self.topology.links.values():
+                if (
+                    link.active
+                    and self.nodes[link.src_id].role != NodeRole.EXTERNAL
+                    and self.nodes[link.dst_id].role != NodeRole.EXTERNAL
+                ):
+                    self.rff_service.enroll(receiver_id=link.dst_id, device_id=link.src_id)
         self._observable_link_ids: dict[str, str] = {}
         self._internal_link_ids: dict[str, str] = {}
         self._observable_session_ids: dict[str, str] = {}
@@ -293,6 +320,23 @@ class PlatformRuntime:
             "latency_ms_sum": 0.0,
             "throughput_mbps_sum": 0.0,
         }
+        self.rff_policies = {}
+        self._rff_report_times: dict[tuple[int, str], float] = {}
+        if self.rff_service is not None and self._rff_template_identifier_enabled:
+            from .rff_policy import RffIngressPolicy
+
+            for node_id in self.roles:
+                if self.nodes[node_id].role == NodeRole.EXTERNAL:
+                    continue
+                self.rff_policies[node_id] = RffIngressPolicy(
+                    policy_mode=self.config.rff_policy_mode,
+                    quality_threshold=self.config.rff_quality_threshold,
+                    queue_pressure_ratio=self.config.rff_queue_pressure_ratio,
+                    strict_hold_s=self.config.rff_strict_hold_s,
+                    strict_on_rate_alarm=self.config.rff_strict_on_rate_alarm,
+                    rate_threshold_pps=self.config.flooding_packet_rate_threshold_pps,
+                )
+                self.nodes[node_id].rff_policy_state = "NORMAL"
         self._emit_initial_state()
         self._initialize_terminal_authorization()
 
@@ -388,6 +432,8 @@ class PlatformRuntime:
                 position_xyz_m=(110.0, 35.0, 90.0),
                 queue_capacity=self.config.queue_capacity,
             )
+            if self.rff_service is not None:
+                self.rff_service.register_device(node_id)
             self.rules[node_id] = DeterministicRuleEngine(
                 self.config.replay_reorder_window_size,
                 replay_timestamp_freshness_s=self.config.replay_timestamp_freshness_s,
@@ -854,6 +900,8 @@ class PlatformRuntime:
             self.security_coordinator.advance(now_s)
         self.attack_scheduler.update(now_s)
         self.normal_disturbances.update(now_s)
+        for node_id in self.rff_policies:
+            self._refresh_rff_receiver(self.nodes[node_id])
 
         self._process_scenario_schedule()
         if self.config.auto_traffic:
@@ -1625,6 +1673,7 @@ class PlatformRuntime:
         message.runtime_attack_id = record.plan.attack_id
         message.application_size_bytes = serialized_application_size(message.payload)
         frame = self.crypto.protect(message, attacker_id, target, link.link_id, 0)
+        frame.claimed_link_sender_id = original.claimed_link_sender_id
         frame.observable_link_id = self.observable_link_id(link.link_id)
         frame.observable_session_id = original.observable_session_id
         frame.runtime_attack_id = record.plan.attack_id
@@ -1769,6 +1818,16 @@ class PlatformRuntime:
         if link is None or not link.active:
             self._mark_report_failed(message)
             return
+        if intent.replay_frame is not None and not self.config.application_layer_available:
+            frame = intent.replay_frame.clone_for_replay()
+            frame.hop_index = hop_index
+            frame.link_id = link.link_id
+            frame.link_sender_id = sender.node_id
+            frame.link_receiver_id = receiver_id
+            frame.claimed_link_sender_id = sender.node_id
+            frame.observable_link_id = self.observable_link_id(link.link_id)
+            self._perform_air_transmission(frame, sender, receiver, link)
+            return
         try:
             frame = self.crypto.protect(
                 message, sender.node_id, receiver_id, link.link_id, hop_index
@@ -1815,6 +1874,8 @@ class PlatformRuntime:
                     message.key_epoch,
                 )
             return
+        if intent.claimed_link_sender_id is not None:
+            frame.claimed_link_sender_id = intent.claimed_link_sender_id
         if sender.role != NodeRole.EXTERNAL:
             self.rules[receiver_id].activate_session(
                 sender.node_id,
@@ -1871,6 +1932,28 @@ class PlatformRuntime:
         observation["rf_sample_ref"] = self._rf_sample_bindings.get(
             (frame.message_id, link.link_id)
         )
+        rff_security_state = {}
+        rff_result = None
+        if self.rff_service is not None:
+            rff_observation = self.rff_service.observe(
+                actual_device_id=sender.node_id,
+                receiver_id=receiver.node_id,
+                sim_time_s=self.context.clock.now_s,
+                sinr_db=observation.get("sinr_db"),
+                measurement_quality=observation.get("measurement_quality"),
+                sample_id=self.context.ids.next("rff"),
+            )
+            observation["rff_observation"] = rff_observation.to_online_dict()
+            # A configured RFF adapter replaces the baseline identifier; its
+            # asynchronous result retains the existing model-state semantics.
+            if self._rff_template_identifier_enabled:
+                rff_result = self.rff_service.identify(
+                    receiver.node_id, frame.claimed_link_sender_id, rff_observation,
+                )
+                rff_security_state = rff_result.to_security_state()
+                rff_security_state["rff_last_update_s"] = self.context.clock.now_s
+                for name, value in rff_security_state.items():
+                    setattr(receiver, name, value)
         observable_extensions = deepcopy(frame.extensions)
         tx_event = build_event(
             self.context,
@@ -1891,6 +1974,7 @@ class PlatformRuntime:
         )
         self._append_event(tx_event)
         emission = tx_event["event_id"]
+        observable_extensions["air_emission_ref"] = emission
         self.packet_accounting.air_sent(frame, replay_record, emission)
         self.packet_accounting.transmission(frame, sender.node_id, self.context.clock.now_s, emission, outcome.decode_success)
         if frame.runtime_attack_id:
@@ -1910,6 +1994,7 @@ class PlatformRuntime:
                 self._metric_totals['rx_success'] += 1
                 capture_event = build_event(self.context, EventType.RX_SUCCESS, receiver,
                     message=frame, phy=observation,
+                    security_state=rff_security_state,
                     availability={'payload_available': True, 'phy_available': True, 'missing_reason': None},
                     leader_id=self.leader_node_id)
                 self._append_event(capture_event)
@@ -1921,7 +2006,9 @@ class PlatformRuntime:
                 if modified_record is not None:
                     replacement.runtime_attack_id = record.plan.attack_id
                     self._bind_attack_message(record, replacement.message_id)
-                    replacement_status = receiver.enqueue_forward(TransmissionIntent(replacement, 1))
+                    replacement_status = receiver.enqueue_forward(TransmissionIntent(
+                        replacement, 1, claimed_link_sender_id=frame.claimed_link_sender_id,
+                    ))
                     self.packet_accounting.causal['interceptions'].append({
                         'message_id': replacement.message_id, 'attack_id': record.plan.attack_id,
                         'attacker_id': receiver.node_id, 'source_id': sender.node_id,
@@ -1931,7 +2018,9 @@ class PlatformRuntime:
                         'mode': 'ON_PATH_INTERCEPTION_REPLACEMENT', 'original_target_delivery_suppressed': True,
                         'replacement_emission_id': None, 'replacement_sent_time_s': None})
                 else:
-                    receiver.enqueue_forward(TransmissionIntent(replacement, 1))
+                    receiver.enqueue_forward(TransmissionIntent(
+                        replacement, 1, claimed_link_sender_id=frame.claimed_link_sender_id,
+                    ))
             # Original can only arrive at the controlled relay, never at target.
             return
 
@@ -1941,12 +2030,17 @@ class PlatformRuntime:
                 receiver.node_id
             ].record_arrival(self.context.clock.now_s)
             self.receiver_rate_observations.arrival(receiver.node_id, self.context.clock.now_s, arrival_statistics)
+            rff_decision = self._rff_admission(receiver, rff_result, arrival_statistics)
+            if rff_decision is not None:
+                observable_extensions["rff_decision"] = rff_decision
+                rff_security_state.update(self._rff_policy_snapshot(receiver))
             rx_event = build_event(
                 self.context,
                 EventType.RX_SUCCESS,
                 receiver,
                 message=frame,
                 phy=observation,
+                security_state=rff_security_state,
                 traffic={
                     "latency_ms": outcome.latency_ms,
                     "throughput_mbps": outcome.throughput_mbps,
@@ -1964,14 +2058,22 @@ class PlatformRuntime:
             if frame.runtime_attack_id:
                 self._attack_event_ids.add(rx_event["event_id"])
             self._metric_totals["rx_success"] += 1
-            if arrival_detection is not None:
+            if arrival_detection is not None and self.config.application_layer_available:
                 self._handle_detection(
                     receiver, frame, arrival_detection, rx_event["event_id"]
                 )
-            received = ReceivedFrame(frame, observation, self.context.clock.now_s)
-            rejected_at_ingress = False
+            received = ReceivedFrame(
+                frame, observation, self.context.clock.now_s,
+                rff_security_state=deepcopy(rff_security_state),
+                rx_event_id=rx_event["event_id"], air_emission_ref=emission,
+            )
+            rejected_at_ingress = self._apply_rff_admission(
+                receiver, frame, rx_event, rff_decision,
+            )
             if (
-                not frame.encrypted
+                not rejected_at_ingress
+                and self._can_parse_application(frame)
+                and not frame.encrypted
                 and self.application_auth.applies_to(frame.packet_type)
             ):
                 # Receiver-total arrival accounting above deliberately sees
@@ -2006,12 +2108,22 @@ class PlatformRuntime:
             if not rejected_at_ingress and not receiver.enqueue_rx(received):
                 self._mark_report_failed_from_frame(frame)
         else:
+            rff_decision = self._rff_admission(
+                receiver, rff_result,
+                self.rules[receiver.node_id].arrival_statistics(self.context.clock.now_s),
+            )
+            if rff_decision is not None:
+                # A failed decode already has no packet to admit or drop.
+                rff_decision["drop"] = False
+                observable_extensions["rff_decision"] = rff_decision
+                rff_security_state.update(self._rff_policy_snapshot(receiver))
             rx_event = build_event(
                 self.context,
                 EventType.RX_FAILURE,
                 receiver,
                 message=frame,
                 phy=observation,
+                security_state=rff_security_state,
                 availability={
                     "payload_available": False,
                     "phy_available": True,
@@ -2024,7 +2136,9 @@ class PlatformRuntime:
             if frame.runtime_attack_id:
                 self._attack_event_ids.add(rx_event["event_id"])
             self._metric_totals["rx_failure"] += 1
-            self._handle_phy_detection(receiver, frame, observation, rx_event)
+            self._apply_rff_admission(receiver, frame, rx_event, rff_decision)
+            if self.config.application_layer_available:
+                self._handle_phy_detection(receiver, frame, observation, rx_event)
             self._mark_report_failed_from_frame(frame)
         self._record_compound_attribution(
             contributing_records,
@@ -2049,6 +2163,125 @@ class PlatformRuntime:
                 AttackOutcomePolicy.injected(replay_record)
             AttackOutcomePolicy.refresh(replay_record)
         self._record_attack_air_outcome(frame, outcome.decode_success)
+
+    @staticmethod
+    def _rff_policy_snapshot(node: Node) -> dict[str, Any]:
+        return {
+            "rff_policy_state": node.rff_policy_state,
+            "rff_strict_since_s": node.rff_strict_since_s,
+            "rff_clear_since_s": node.rff_clear_since_s,
+        }
+
+    def _sync_rff_policy(self, node: Node) -> None:
+        policy = self.rff_policies[node.node_id]
+        node.rff_policy_state = policy.state
+        node.rff_strict_since_s = policy.strict_since_s
+        node.rff_clear_since_s = policy.clear_since_s
+
+    def _refresh_rff_receiver(self, node: Node) -> None:
+        policy = self.rff_policies.get(node.node_id)
+        if policy is None:
+            return
+        statistics = self.rules[node.node_id].arrival_statistics(self.context.clock.now_s)
+        transition = policy.refresh(
+            sim_time_s=self.context.clock.now_s,
+            queue_ratio=len(node.rx_queue) / node.queue_capacity,
+            packet_rate_pps=float(statistics["packet_rate_pps"]),
+        )
+        self._sync_rff_policy(node)
+        if transition and self.config.rff_policy_mode == "ENFORCE":
+            event = build_event(
+                self.context, EventType.NODE_STATE, node,
+                extensions={"rff_policy_transition": {
+                    "transition": transition, **self._rff_policy_snapshot(node),
+                    "packet_rate_pps": statistics["packet_rate_pps"],
+                    "queue_ratio": len(node.rx_queue) / node.queue_capacity,
+                }}, leader_id=self.leader_node_id,
+            )
+            self._append_event(event)
+            self._report_rff(node, "RFF_STRICT_WHITELIST",
+                event["extensions"]["rff_policy_transition"], [event["event_id"]])
+
+    def _rff_admission(self, receiver: Node, identification: Any,
+                       statistics: dict[str, Any]) -> dict[str, Any] | None:
+        policy = self.rff_policies.get(receiver.node_id)
+        if policy is None or identification is None:
+            return None
+        store = self.rff_service.template_store
+        decision = policy.evaluate(
+            sim_time_s=self.context.clock.now_s, identification=identification,
+            claimed_is_whitelisted=store.is_whitelisted(receiver.node_id, identification.claimed_link_sender_id),
+            predicted_is_whitelisted=store.is_whitelisted(receiver.node_id, identification.predicted_device_id),
+            queue_ratio=len(receiver.rx_queue) / receiver.queue_capacity,
+            packet_rate_pps=float(statistics["packet_rate_pps"]),
+        )
+        self._sync_rff_policy(receiver)
+        return {
+            **asdict(decision), "decision_time_s": self.context.clock.now_s,
+            "quality": identification.quality,
+            "packet_rate_pps": statistics["packet_rate_pps"],
+            "queue_ratio": len(receiver.rx_queue) / receiver.queue_capacity,
+        }
+
+    def _apply_rff_admission(self, receiver: Node, frame: Frame,
+                             event: dict[str, Any], decision: dict[str, Any] | None) -> bool:
+        if decision is None or self.config.rff_policy_mode != "ENFORCE":
+            return False
+        if decision.get("transition"):
+            self._report_rff(receiver, "RFF_STRICT_WHITELIST",
+                {**decision, **self._rff_policy_snapshot(receiver)}, [event["event_id"]])
+        result = None
+        evidence_ids = [event["event_id"]]
+        if decision["drop"]:
+            request = DefenseRequest(
+                request_id=self.context.ids.next("defense-request"),
+                action=DefenseAction.DROP_PACKET,
+                requester_node_id=receiver.node_id, target_node_id=receiver.node_id,
+                requested_time_s=self.context.clock.now_s, reason=decision["reason"],
+            )
+            result = self.defense.execute(request, receiver, self.context.clock.now_s).to_dict()
+            if result["executed"]:
+                receiver.drop_count += 1
+                self._record_attack_blocked(frame)
+                self._mark_report_failed_from_frame(frame)
+            else:
+                decision["drop"] = False
+                event["extensions"]["rff_decision"]["drop"] = False
+            audit = build_event(
+                self.context, EventType.DEFENSE_RESULT, receiver, message=frame,
+                security_state=event["online_features"]["security_state"],
+                extensions={"defense_result": result, "rff_decision": deepcopy(decision),
+                    "source_event_ids": [event["event_id"]],
+                    "air_emission_ref": event["extensions"]["air_emission_ref"]},
+                leader_id=self.leader_node_id,
+            )
+            self._append_event(audit)
+            evidence_ids.append(audit["event_id"])
+            self.packet_accounting.detection(receiver.node_id, frame, decision["reason"], result)
+        if decision["confirmed_identity_anomaly"] or decision["drop"]:
+            category = ("RFF_IDENTITY_MISMATCH" if decision["confirmed_identity_anomaly"]
+                        else "RFF_IDENTITY_UNVERIFIED")
+            self._report_rff(receiver, category,
+                {**event["online_features"]["security_state"], **decision}, evidence_ids, result)
+        return bool(decision["drop"])
+
+    def _report_rff(self, node: Node, category: str, evidence: dict[str, Any],
+                    evidence_ids: list[str], action_result: dict[str, Any] | None = None) -> None:
+        now_s = self.context.clock.now_s
+        key = (node.node_id, category)
+        previous = self._rff_report_times.get(key)
+        if (not evidence.get("transition") and previous is not None
+                and now_s - previous < self.config.security_summary_window_s - 1e-12):
+            return
+        self._rff_report_times[key] = now_s
+        report = self.reporting.create(
+            node.node_id, event_time_s=now_s, detection_time_s=now_s,
+            action_time_s=action_result.get("executed_time_s") if action_result else None,
+            category=category, evidence=evidence, action_result=action_result,
+            severity="MEDIUM", source_event_ids=evidence_ids,
+            decision_source="PHYSICAL_RFF",
+        )
+        node.local_security_cache.append(report.to_dict())
 
     def _transmit_replay_frame(
         self,
@@ -2109,6 +2342,7 @@ class PlatformRuntime:
             application_hmac_key_id=application_verification.key_id,
         )
         application_authenticated = application_verification.passed
+        security_state.update(received.rff_security_state)
         fully_authenticated = (
             security_state["auth_result"] == "PASS"
             and application_authenticated
@@ -2142,6 +2376,8 @@ class PlatformRuntime:
                     "failure_reason": application_verification.failure_reason,
                     "key_id": application_verification.key_id,
                 },
+                "source_event_ids": [received.rx_event_id] if received.rx_event_id is not None else [],
+                "air_emission_ref": received.air_emission_ref,
             },
             leader_id=self.leader_node_id,
         )
@@ -2172,12 +2408,40 @@ class PlatformRuntime:
             )
         return fully_authenticated, blocked
 
+    def _can_parse_application(self, frame: Frame) -> bool:
+        return self.config.application_layer_available or frame.packet_type in {
+            "SECURITY_REPORT", "SECURITY_SUMMARY", "SKG_CONTROL",
+        }
+
+    def _accept_opaque_frame(self, node: Node, frame: Frame) -> None:
+        """Forward unknown business bytes without decoding or executing them."""
+        node.received_count += 1
+        node.opaque_received_count += 1
+        if frame.hop_index + 1 >= len(frame.route) - 1:
+            node.opaque_delivered_count += 1
+            return
+        envelope = Message(
+            message_id=frame.message_id, origin_node_id=frame.route[0],
+            final_dst_node_id=frame.route[-1], claimed_src_id=frame.claimed_src_id,
+            claimed_dst_id=frame.claimed_dst_id, packet_type=frame.packet_type,
+            payload={}, sequence_no=frame.sequence_no, session_id=frame.session_id,
+            key_epoch=frame.key_epoch, created_time_s=frame.created_time_s,
+            route=list(frame.route), runtime_attack_id=frame.runtime_attack_id,
+        )
+        if node.enqueue_forward(TransmissionIntent(
+            envelope, frame.hop_index + 1, replay_frame=frame.clone_for_replay(),
+        )):
+            node.forwarded_count += 1
+
     def _service_rx(self, node: Node, budget: int) -> None:
         for _ in range(budget):
             if not node.rx_queue:
                 return
             received = node.rx_queue.popleft()
             frame = received.frame
+            if not self._can_parse_application(frame):
+                self._accept_opaque_frame(node, frame)
+                continue
             opened = self.crypto.open(frame, node.node_id)
             if received.application_hmac_checked:
                 application_verification = ApplicationHmacVerification(
@@ -2352,6 +2616,17 @@ class PlatformRuntime:
         detection = self._adjudicate_detection(node, detection)
         if detection.high_certainty:
             self._rule_high_certainty_evidence_ids.add(evidence_event_id)
+        evidence = next(
+            (event for event in reversed(self.events) if event["event_id"] == evidence_event_id),
+            None,
+        )
+        rff_security_state = {
+            name: value
+            for name, value in (
+                evidence["online_features"]["security_state"].items() if evidence else ()
+            )
+            if name.startswith("rff_")
+        }
         result = ModelResult(
             schema_version=SCHEMA_VERSION,
             run_id=self.run_id,
@@ -2375,6 +2650,7 @@ class PlatformRuntime:
             EventType.MODEL_RESULT,
             node,
             message=frame,
+            security_state=rff_security_state,
             availability={
                 "payload_available": False,
                 "phy_available": False,
@@ -2414,6 +2690,7 @@ class PlatformRuntime:
             EventType.DEFENSE_RESULT,
             node,
             message=frame,
+            security_state=rff_security_state,
             availability={
                 "payload_available": False,
                 "phy_available": False,
@@ -3461,6 +3738,25 @@ class PlatformRuntime:
             attack_plans=attacks,
             normal_disturbance_plans=normal,
         )
+        record["rff_simulation"] = {
+            "enabled": self.config.rff_enabled,
+            "policy_mode": self.config.rff_policy_mode,
+            "feature_schema": RFF_FEATURE_SCHEMA,
+            "provider": "SIMULATED_FEATURE_TEMPLATE",
+            "identification_provider": (
+                "NEAREST_TEMPLATE" if self._rff_template_identifier_enabled
+                else "EXTERNAL_MODEL_ADAPTER"
+            ),
+            "calibration_status": "UNCALIBRATED_BASELINE",
+            "enrollment_samples": self.config.rff_enrollment_samples,
+            "quality_threshold": self.config.rff_quality_threshold,
+            "distance_threshold": self.config.rff_distance_threshold,
+            "min_identity_margin": self.config.rff_min_identity_margin,
+            "application_layer_available": self.config.application_layer_available,
+            "queue_pressure_ratio": self.config.rff_queue_pressure_ratio,
+            "strict_hold_s": self.config.rff_strict_hold_s,
+            "strict_on_rate_alarm": self.config.rff_strict_on_rate_alarm,
+        }
         all_roles = {
             str(node_id): node.role.value for node_id, node in sorted(self.nodes.items())
         }
@@ -3490,10 +3786,18 @@ class PlatformRuntime:
         record["probe_profile"] = self.probes.profile
         record["application_hmac"] = self.application_auth.provenance()
         record["detection_configuration"] = {
-            "application_hmac": {"enabled": True, "scope": "BASE_SECURITY"},
-            "replay_protection": {"enabled": True, "scope": "BASE_SECURITY"},
+            "mode": self.config.effective_detection_mode,
+            "requested_mode": self.config.detection_mode,
+            "application_hmac": {"enabled": self.config.application_layer_available, "scope": "BASE_SECURITY"},
+            "replay_protection": {"enabled": self.config.application_layer_available, "scope": "BASE_SECURITY"},
+            "management_authentication": {"enabled": True, "scope": "PLATFORM_MANAGEMENT"},
+            "rff": {
+                "enabled": self.config.rff_enabled,
+                "enforcing": self.config.rff_enabled and self.config.rff_policy_mode == "ENFORCE",
+                "policy_mode": self.config.rff_policy_mode,
+            },
             "flooding": {
-                "enabled": self.config.flooding_detection_enabled,
+                "enabled": self.config.application_layer_available and self.config.flooding_detection_enabled,
                 "scope": "RECEIVER_TOTAL_DECODED_ARRIVALS",
                 "window_s": self.config.traffic_statistics_window_s,
                 "threshold_pps": self.config.flooding_packet_rate_threshold_pps,
@@ -4415,12 +4719,23 @@ class PlatformRuntime:
 
     def evaluation_view(self) -> dict[str, Any]:
         self._refresh_attack_backlog_truth()
-        return ExperimentEvaluator().evaluate(
+        evaluation = ExperimentEvaluator().evaluate(
             self.events,
             self.attack_scheduler.labels(),
             reports=self.reporting.gcs_inbox,
             run_record=self.run_record(),
         )
+        evaluation["application_layer_available"] = self.config.application_layer_available
+        evaluation["detection_configuration"] = self.run_record()["detection_configuration"]
+        evaluation["physical_layer"] = evaluate_rff(
+            self.events, self.attack_scheduler.labels(),
+            transmissions=self.packet_accounting.causal["transmissions"],
+            legitimate_node_ids=[node_id for node_id, node in self.nodes.items()
+                                 if node.role != NodeRole.EXTERNAL],
+            enabled=self.config.rff_enabled,
+            policy_mode=self.config.rff_policy_mode,
+        )
+        return evaluation
 
     def metrics(self) -> dict[str, Any]:
         tx = self._metric_totals["tx"]
@@ -4532,6 +4847,8 @@ class PlatformRuntime:
                 singular = key[:-1] if isinstance(key, str) and key.endswith("s") else key
                 return [canonicalize_ids(item, singular) for item in value]
             if isinstance(value, str) and isinstance(key, str):
+                if key == "sample_id" and value.startswith("rff-"):
+                    return f"rff-{value.rsplit('-', 1)[-1]}"
                 if key.endswith("link_id"):
                     return self.internal_link_id(value)
                 if key.endswith("session_id"):

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from copy import deepcopy
 from datetime import datetime
 import json
 import math
@@ -159,7 +160,69 @@ def _validate_object(
                 valid = _validate_object(
                     child, item_ref, f"{field_path}[{index}]", contract, errors
                 ) and valid
+    if object_name == "RffObservation":
+        vector = value.get("feature_vector")
+        if isinstance(vector, list):
+            expected_size = 0 if value.get("extraction_status") == "UNAVAILABLE" else 8
+            if len(vector) != expected_size:
+                errors.append(f"{path}.feature_vector: expected {expected_size} features")
+                valid = False
+            if any(not _is_number(item) or not math.isfinite(item) for item in vector):
+                errors.append(f"{path}.feature_vector: features must be finite numbers")
+                valid = False
     return valid
+
+
+def _pre_detection_mode_schema(contract: dict[str, Any]) -> dict[str, Any]:
+    legacy = deepcopy(contract)
+    legacy["objects"]["RunConfig"]["fields"].pop("detection_mode", None)
+    return legacy
+
+
+def _pre_external_fdi_schema(contract: dict[str, Any]) -> dict[str, Any]:
+    legacy = deepcopy(contract)
+    legacy["objects"]["AttackTruth"]["fields"]["injection_stage"]["enum"] = ["POST_HMAC_PRE_TRANSMISSION"]
+    return legacy
+
+
+def _pre_rff_schema(contract: dict[str, Any], *, include_rate_filter: bool = True) -> dict[str, Any]:
+    """Accept the exact historical contract, without relaxing other fields."""
+    legacy = _pre_detection_mode_schema(contract)
+    objects = legacy["objects"]
+    objects.pop("RffObservation", None)
+    objects.pop("RffDecision", None)
+    objects["runs"]["fields"].pop("rff_simulation", None)
+    objects["RunConfig"]["fields"].pop("application_layer_available", None)
+    for name in list(objects["RunConfig"]["fields"]):
+        if name.startswith("rff_"):
+            objects["RunConfig"]["fields"].pop(name)
+    objects["online_features.packet"]["fields"].pop("claimed_link_sender_id", None)
+    objects["online_features.phy"]["fields"].pop("rff_observation", None)
+    for name in ("rff_predicted_device_id", "rff_claimed_link_sender_id",
+                 "rff_distance", "rff_threshold", "rff_reason", "rff_policy_state",
+                 "rff_strict_since_s", "rff_clear_since_s"):
+        objects["online_features.security_state"]["fields"].pop(name, None)
+    if not include_rate_filter:
+        objects["runs"]["fields"].pop("detection_configuration", None)
+        objects["RunConfig"]["fields"].pop("flooding_detection_enabled", None)
+    return legacy
+
+
+def _observe_only_rff_schema(contract: dict[str, Any]) -> dict[str, Any]:
+    legacy = _pre_detection_mode_schema(contract)
+    legacy["objects"].pop("RffDecision", None)
+    legacy["objects"]["RunConfig"]["fields"].pop("application_layer_available", None)
+    descriptions = {
+        "rff_policy_mode": "Phase one only implements OBSERVE_ONLY; runtime rejects ENFORCE.",
+        "rff_queue_pressure_ratio": "Reserved phase-two receiver queue pressure threshold.",
+        "rff_strict_hold_s": "Reserved phase-two strict mode hold duration.",
+        "rff_strict_on_rate_alarm": "Reserved phase-two rate-alarm strict mode switch.",
+    }
+    for name, description in descriptions.items():
+        legacy["objects"]["RunConfig"]["fields"][name]["description"] = description
+    for name in ("rff_policy_state", "rff_strict_since_s", "rff_clear_since_s"):
+        legacy["objects"]["online_features.security_state"]["fields"].pop(name, None)
+    return legacy
 
 
 def _named_references(value: Any, names: set[str]) -> list[tuple[str, Any]]:
@@ -198,6 +261,12 @@ class DatasetValidator:
         errors: list[str] = []
         warnings: list[str] = []
         contract = schema_v1()
+        accepted_schemas = []
+        for base in (contract, _pre_external_fdi_schema(contract)):
+            accepted_schemas.extend([
+                base, _pre_detection_mode_schema(base), _observe_only_rff_schema(base),
+                _pre_rff_schema(base), _pre_rff_schema(base, include_rate_filter=False),
+            ])
         schema_path = root / "schema.json"
         if not schema_path.exists():
             errors.append("missing file: schema.json")
@@ -208,7 +277,7 @@ class DatasetValidator:
                     raise TypeError("schema root must be an object")
                 if supplied.get("schema_version") != SCHEMA_VERSION:
                     errors.append("schema.json has unsupported schema_version")
-                if supplied != contract:
+                if supplied not in accepted_schemas:
                     errors.append("schema.json does not match the frozen schema contract")
             except (OSError, UnicodeError, json.JSONDecodeError, TypeError) as exc:
                 errors.append(f"schema.json is invalid: {exc}")
@@ -366,6 +435,7 @@ class DatasetValidator:
                     expected_fingerprint = parsed.semantic_fingerprint(
                         attack_plans=attack_plan,
                         normal_disturbance_plans=normal_plan,
+                        include_rff=any(name.startswith("rff_") for name in config),
                     )
                     calibration_hash = (
                         run.get("profiles", {}).get("calibration_profile_hash")
@@ -500,6 +570,17 @@ class DatasetValidator:
                 if missing_reason is not None and not isinstance(missing_reason, str):
                     errors.append(f"{path}.availability.missing_reason: must be string or null")
 
+            extensions = event.get("extensions", {})
+            if isinstance(extensions, dict) and "rff_decision" in extensions:
+                decision = extensions["rff_decision"]
+                if _validate_object(decision, "RffDecision", f"{path}.extensions.rff_decision", contract, errors):
+                    if decision["drop"] and (not decision["would_drop"] or event_type == "RX_FAILURE"):
+                        errors.append(f"{path}.extensions.rff_decision.drop: no decoded admission opportunity")
+                    if decision["confirmed_identity_anomaly"] and decision["identity_result"] not in {"UNKNOWN", "MISMATCH"}:
+                        errors.append(f"{path}.extensions.rff_decision: unverified identity is not a confirmed anomaly")
+                emission = extensions.get("air_emission_ref")
+                if isinstance(emission, str):
+                    event_reference_checks.append((f"{path}.extensions.air_emission_ref", [emission]))
             if event_type == "MODEL_RESULT":
                 extensions = event.get("extensions")
                 model = extensions.get("model_result") if isinstance(extensions, dict) else None

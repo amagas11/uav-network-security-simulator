@@ -87,6 +87,7 @@
         "dataset_maturity": {"name": "dataset_maturity", "type": "string", "required": false, "nullable": false, "enum": ["DEVELOPMENT", "PRELIMINARY", "FORMAL"], "description": "Declared dataset maturity; mock providers cannot produce FORMAL data.", "semantic_id": "run.dataset_maturity"},
         "security_providers": {"name": "security_providers", "type": "object", "required": false, "nullable": false, "object_ref": "SecurityProviders", "description": "Non-secret provider provenance.", "semantic_id": "run.security_providers"},
         "application_hmac": {"name": "application_hmac", "type": "object", "required": false, "nullable": false, "description": "Secret-free application HMAC algorithm, scope, tag length and covered-field provenance.", "semantic_id": "run.application_hmac"},
+        "rff_simulation": {"name": "rff_simulation", "type": "object", "required": false, "nullable": false, "description": "Feature-level simulated RFF configuration; no device baselines or IQ claims.", "semantic_id": "run.rff_simulation"},
         "detection_configuration": {"name": "detection_configuration", "type": "object", "required": false, "nullable": false, "description": "Explicit enabled detector scope and always-on base security; no attack truth is supplied to detectors.", "semantic_id": "run.detection_configuration"},
         "security_provider_maturity": {"name": "security_provider_maturity", "type": "string", "required": false, "nullable": false, "enum": ["TEST", "FORMAL"], "description": "Aggregate maturity of active security providers.", "semantic_id": "run.security_provider_maturity"},
         "calibration_maturity": {"name": "calibration_maturity", "type": "string", "required": false, "nullable": false, "enum": ["UNCALIBRATED", "TEST", "DEVELOPMENT", "PRELIMINARY", "APPROVED"], "description": "Calibration evidence maturity; TEST and DEVELOPMENT fixtures are never formal evidence.", "semantic_id": "run.calibration_maturity"},
@@ -223,6 +224,17 @@
         "traffic_specs": {"name": "traffic_specs", "type": "array<object>", "required": true, "nullable": false, "description": "Strict config-driven legitimate business traffic used consistently by runtime, batch, API, and RL.", "semantic_id": "config.business_traffic_specs"},
         "session_lifecycle_specs": {"name": "session_lifecycle_specs", "type": "array<object>", "required": true, "nullable": false, "description": "Legitimate security-session rotations applied before old-session replay.", "semantic_id": "config.session_lifecycle_specs"},
         "allow_external_model_observer": {"name": "allow_external_model_observer", "type": "boolean", "required": true, "nullable": false, "description": "Research-only override; false for the frozen C online stream.", "semantic_id": "config.external_model_observer"},
+        "rff_enabled": {"name": "rff_enabled", "type": "boolean", "required": false, "nullable": false, "description": "Enable simulated receiver fingerprint observations.", "semantic_id": "config.rff_enabled"},
+        "application_layer_available": {"name": "application_layer_available", "type": "boolean", "required": false, "nullable": false, "description": "Whether vendor business protocol parsing is available; false keeps business bytes opaque while platform management protocols remain known.", "semantic_id": "config.application_layer_available"},
+        "detection_mode": {"name": "detection_mode", "type": "string", "required": false, "nullable": true, "enum": ["APPLICATION_ONLY", "PHYSICAL_ONLY", "COMBINED"], "description": "Optional authoritative preset; null preserves individually configured detector switches.", "semantic_id": "config.detection_mode"},
+        "rff_policy_mode": {"name": "rff_policy_mode", "type": "string", "required": false, "nullable": false, "enum": ["OBSERVE_ONLY", "ENFORCE"], "description": "Observe decisions without actions, or enforce synchronous receiver-local RFF admission.", "semantic_id": "config.rff_policy_mode"},
+        "rff_enrollment_samples": {"name": "rff_enrollment_samples", "type": "integer", "required": false, "nullable": false, "minimum": 1, "description": "Trusted enrollment samples per legal directed neighbor.", "semantic_id": "config.rff_enrollment_samples"},
+        "rff_quality_threshold": {"name": "rff_quality_threshold", "type": "number", "required": false, "nullable": false, "minimum": 0, "maximum": 1, "description": "Minimum extraction quality for template identification.", "semantic_id": "config.rff_quality_threshold"},
+        "rff_distance_threshold": {"name": "rff_distance_threshold", "type": "number", "required": false, "nullable": false, "exclusiveMinimum": 0, "description": "Uncalibrated normalized template distance threshold.", "semantic_id": "config.rff_distance_threshold"},
+        "rff_min_identity_margin": {"name": "rff_min_identity_margin", "type": "number", "required": false, "nullable": false, "minimum": 0, "description": "Minimum separation between first and second nearest template.", "semantic_id": "config.rff_min_identity_margin"},
+        "rff_queue_pressure_ratio": {"name": "rff_queue_pressure_ratio", "type": "number", "required": false, "nullable": false, "minimum": 0, "maximum": 1, "description": "Receiver queue occupancy ratio activating the strict physical whitelist.", "semantic_id": "config.rff_queue_pressure_ratio"},
+        "rff_strict_hold_s": {"name": "rff_strict_hold_s", "type": "number", "required": false, "nullable": false, "exclusiveMinimum": 0, "description": "Continuous pressure-free duration required before leaving strict mode.", "semantic_id": "config.rff_strict_hold_s"},
+        "rff_strict_on_rate_alarm": {"name": "rff_strict_on_rate_alarm", "type": "boolean", "required": false, "nullable": false, "description": "Allow total arrival rate to activate the strict physical whitelist.", "semantic_id": "config.rff_strict_on_rate_alarm"},
         "episode_phases": {"name": "episode_phases", "type": "object", "required": true, "nullable": true, "description": "Evaluator/provenance metadata only; excluded from the semantic fingerprint and online state.", "semantic_id": "config.episode_phases_metadata"},
         "model_recommendation_confidence_threshold": {"name": "model_recommendation_confidence_threshold", "type": "number", "required": false, "nullable": false, "minimum": 0, "maximum": 1, "description": "B-side model recommendation confidence gate.", "semantic_id": "config.model_confidence_gate"},
         "model_recommendation_quality_threshold": {"name": "model_recommendation_quality_threshold", "type": "number", "required": false, "nullable": false, "minimum": 0, "maximum": 1, "description": "B-side model recommendation quality gate.", "semantic_id": "config.model_quality_gate"},
@@ -329,7 +341,7 @@
         "actual_transmitter_id": {"name": "actual_transmitter_id", "type": "integer", "required": false, "nullable": true, "description": "Truth-only physical/compromised transmitter.", "semantic_id": "truth.actual_transmitter"},
         "original_value": {"name": "original_value", "type": "object", "required": false, "nullable": true, "description": "FDI pre-mutation business value.", "semantic_id": "truth.original_value"},
         "modified_value": {"name": "modified_value", "type": "object", "required": false, "nullable": true, "description": "FDI post-mutation business value.", "semantic_id": "truth.modified_value"},
-        "injection_stage": {"name": "injection_stage", "type": "string", "required": false, "nullable": false, "enum": ["POST_HMAC_PRE_TRANSMISSION"], "description": "FDI mutates business payload after application HMAC and before transmission.", "semantic_id": "truth.injection_stage"},
+        "injection_stage": {"name": "injection_stage", "type": "string", "required": false, "nullable": false, "enum": ["POST_HMAC_PRE_TRANSMISSION", "CAPTURE_MODIFY_INJECT", "ON_PATH_INTERCEPTION_REPLACEMENT"], "description": "FDI mutates business payload after application HMAC and before transmission.", "semantic_id": "truth.injection_stage"},
         "requested_plan": {"name": "requested_plan", "type": "object", "required": true, "nullable": false, "description": "Caller-supplied plan before defaults are resolved.", "semantic_id": "truth.requested_plan"},
         "resolved_plan": {"name": "resolved_plan", "type": "object", "required": true, "nullable": false, "object_ref": "AttackPlan", "description": "Exact plan executed by runtime.", "semantic_id": "truth.resolved_plan"},
         "observable_target_link_ids": {"name": "observable_target_link_ids", "type": "array<string>", "required": false, "nullable": false, "description": "Opaque online aliases corresponding to target links; stored only in truth/provenance for scoped evaluation.", "semantic_id": "truth.observable_target_links"},
@@ -423,6 +435,7 @@
       "description": "Observable packet/header projection.",
       "fields": {
         "claimed_src_id": {"name": "claimed_src_id", "type": "integer", "required": true, "nullable": true, "description": "Claimed source.", "semantic_id": "packet.claimed_source"},
+        "claimed_link_sender_id": {"name": "claimed_link_sender_id", "type": "integer", "required": false, "nullable": true, "description": "Observable current-hop sender address, independent of end-to-end source and simulator truth.", "semantic_id": "packet.claimed_hop_sender"},
         "claimed_dst_id": {"name": "claimed_dst_id", "type": "integer", "required": true, "nullable": true, "description": "Claimed destination.", "semantic_id": "packet.claimed_destination"},
         "packet_type": {"name": "packet_type", "type": "string", "required": true, "nullable": true, "description": "Application type.", "semantic_id": "packet.type"},
         "packet_size_bytes": {"name": "packet_size_bytes", "type": "integer", "required": true, "nullable": true, "unit": "B", "minimum": 0, "description": "UTF-8 byte length of the canonical JSON serialized application payload; excludes encryption and PHY/link overhead.", "semantic_id": "packet.canonical_application_size"},
@@ -453,7 +466,35 @@
         "channel_id": {"name": "channel_id", "type": "string", "required": true, "nullable": true, "description": "Channel ID.", "semantic_id": "phy.channel"},
         "measurement_quality": {"name": "measurement_quality", "type": "number", "required": true, "nullable": true, "unit": "ratio", "minimum": 0, "maximum": 1, "description": "Measurement quality.", "semantic_id": "phy.quality"},
         "csi_mag_db": {"name": "csi_mag_db", "type": "array<number>", "required": true, "nullable": true, "unit": "dB", "description": "Receiver-local frequency-domain |H[k]| in dB. Both directions share the latent response and add independent noise.", "semantic_id": "phy.csi_mag_db"},
-        "rf_sample_ref": {"name": "rf_sample_ref", "type": "string", "required": true, "nullable": true, "description": "Current-hop manifest sample_id.", "semantic_id": "phy.rf_sample_ref"}
+        "rf_sample_ref": {"name": "rf_sample_ref", "type": "string", "required": true, "nullable": true, "description": "Current-hop manifest sample_id.", "semantic_id": "phy.rf_sample_ref"},
+        "rff_observation": {"name": "rff_observation", "type": "object", "required": false, "nullable": true, "object_ref": "RffObservation", "description": "Noisy feature-level simulated receiver observation, not an IQ sample or payload field.", "semantic_id": "phy.rff_observation"}
+      }
+    },
+    "RffDecision": {
+      "description": "Receiver-local ingress decision without attack truth or business payload.",
+      "fields": {
+        "identity_result": {"name": "identity_result", "type": "string", "required": true, "nullable": false, "enum": ["MATCH", "MISMATCH", "UNKNOWN", "AMBIGUOUS", "LOW_QUALITY", "UNAVAILABLE"], "description": "Local fingerprint identification state.", "semantic_id": "rff_decision.identity"},
+        "policy_state": {"name": "policy_state", "type": "string", "required": true, "nullable": false, "enum": ["NORMAL", "RFF_STRICT_WHITELIST"], "description": "Admission mode at this reception.", "semantic_id": "rff_decision.mode"},
+        "would_drop": {"name": "would_drop", "type": "boolean", "required": true, "nullable": false, "description": "Policy would reject under enforcement.", "semantic_id": "rff_decision.would_drop"},
+        "drop": {"name": "drop", "type": "boolean", "required": true, "nullable": false, "description": "Decoded packet rejected before RX queue admission.", "semantic_id": "rff_decision.drop"},
+        "confirmed_identity_anomaly": {"name": "confirmed_identity_anomaly", "type": "boolean", "required": true, "nullable": false, "description": "Qualified identity anomaly, distinct from protective unverified rejection.", "semantic_id": "rff_decision.confirmed"},
+        "reason": {"name": "reason", "type": "string", "required": true, "nullable": false, "description": "Non-secret policy reason.", "semantic_id": "rff_decision.reason"},
+        "transition": {"name": "transition", "type": "string", "required": true, "nullable": true, "description": "Mode change, if any.", "semantic_id": "rff_decision.transition"},
+        "decision_time_s": {"name": "decision_time_s", "type": "number", "required": true, "nullable": false, "minimum": 0, "description": "Receiver decision simulation time.", "semantic_id": "rff_decision.time"},
+        "quality": {"name": "quality", "type": "number", "required": true, "nullable": true, "minimum": 0, "maximum": 1, "description": "Available extraction quality.", "semantic_id": "rff_decision.quality"},
+        "packet_rate_pps": {"name": "packet_rate_pps", "type": "number", "required": true, "nullable": false, "minimum": 0, "description": "Local all-source decoded arrival rate before filtering.", "semantic_id": "rff_decision.rate"},
+        "queue_ratio": {"name": "queue_ratio", "type": "number", "required": true, "nullable": false, "minimum": 0, "maximum": 1, "description": "Local RX queue occupancy before admission.", "semantic_id": "rff_decision.queue"}
+      }
+    },
+    "RffObservation": {
+      "description": "Receiver-local simulated fingerprint; no true transmitter or noiseless baseline.",
+      "fields": {
+        "sample_id": {"name": "sample_id", "type": "string", "required": true, "nullable": false, "description": "Opaque receiver observation identifier.", "semantic_id": "rff.sample"},
+        "feature_schema": {"name": "feature_schema", "type": "string", "required": true, "nullable": false, "enum": ["RFF_FEATURE_V1"], "description": "Eight-dimensional simulated hardware feature schema.", "semantic_id": "rff.schema"},
+        "feature_vector": {"name": "feature_vector", "type": "array<number>", "required": true, "nullable": false, "description": "CFO, IQ gain/phase, I/Q DC, PA AM-AM/AM-PM, clock skew; empty when extraction unavailable.", "semantic_id": "rff.vector"},
+        "quality": {"name": "quality", "type": "number", "required": true, "nullable": false, "minimum": 0, "maximum": 1, "description": "Simulated extraction quality derived from receiver PHY observations.", "semantic_id": "rff.quality"},
+        "extraction_status": {"name": "extraction_status", "type": "string", "required": true, "nullable": false, "enum": ["AVAILABLE", "LOW_QUALITY", "UNAVAILABLE"], "description": "Extraction availability, not attack truth.", "semantic_id": "rff.status"},
+        "missing_reason": {"name": "missing_reason", "type": "string", "required": true, "nullable": true, "description": "Reason extraction is absent or unreliable.", "semantic_id": "rff.missing_reason"}
       }
     },
     "online_features.traffic": {
@@ -511,7 +552,15 @@
         "rff_identity_result": {"name": "rff_identity_result", "type": "string", "required": true, "nullable": true, "description": "RFF model prediction if available.", "semantic_id": "security.rff"},
         "rff_identity_confidence": {"name": "rff_identity_confidence", "type": "number", "required": false, "nullable": true, "minimum": 0, "maximum": 1, "description": "RFF model confidence.", "semantic_id": "security.rff_confidence"},
         "rff_quality": {"name": "rff_quality", "type": "number", "required": false, "nullable": true, "minimum": 0, "maximum": 1, "description": "RFF input/result quality.", "semantic_id": "security.rff_quality"},
-        "rff_last_update_s": {"name": "rff_last_update_s", "type": "number", "required": false, "nullable": true, "unit": "s", "minimum": 0, "description": "Last local RFF result time.", "semantic_id": "security.rff_last_update"}
+        "rff_last_update_s": {"name": "rff_last_update_s", "type": "number", "required": false, "nullable": true, "unit": "s", "minimum": 0, "description": "Last local RFF result time.", "semantic_id": "security.rff_last_update"},
+        "rff_predicted_device_id": {"name": "rff_predicted_device_id", "type": "integer", "required": false, "nullable": true, "description": "Device predicted by this receiver's enrolled templates, never simulator truth.", "semantic_id": "security.rff_predicted_device"},
+        "rff_claimed_link_sender_id": {"name": "rff_claimed_link_sender_id", "type": "integer", "required": false, "nullable": true, "description": "Observable hop address used in this identification.", "semantic_id": "security.rff_claimed_hop_sender"},
+        "rff_distance": {"name": "rff_distance", "type": "number", "required": false, "nullable": true, "minimum": 0, "description": "Nearest normalized template distance.", "semantic_id": "security.rff_distance"},
+        "rff_threshold": {"name": "rff_threshold", "type": "number", "required": false, "nullable": true, "exclusiveMinimum": 0, "description": "Uncalibrated configured template acceptance threshold.", "semantic_id": "security.rff_threshold"},
+        "rff_reason": {"name": "rff_reason", "type": "string", "required": false, "nullable": true, "description": "Receiver identification or unavailability reason.", "semantic_id": "security.rff_reason"},
+        "rff_policy_state": {"name": "rff_policy_state", "type": "string", "required": false, "nullable": true, "enum": ["NORMAL", "RFF_STRICT_WHITELIST"], "description": "Receiver-local physical admission mode.", "semantic_id": "security.rff_policy_state"},
+        "rff_strict_since_s": {"name": "rff_strict_since_s", "type": "number", "required": false, "nullable": true, "minimum": 0, "description": "Strict mode entry simulation time.", "semantic_id": "security.rff_strict_since"},
+        "rff_clear_since_s": {"name": "rff_clear_since_s", "type": "number", "required": false, "nullable": true, "minimum": 0, "description": "Start of continuous pressure-free hold.", "semantic_id": "security.rff_clear_since"}
       }
     },
     "online_features.resource_state": {

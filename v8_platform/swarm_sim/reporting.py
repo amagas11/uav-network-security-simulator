@@ -272,7 +272,7 @@ class ReportingService:
             # already-produced, non-secret evidence and action result so the
             # UI does not substitute an unrelated secondary GCS alarm. This
             # changes neither the detector nor its decision/defense path.
-            if key[1] == "DOS":
+            if key[1] == "DOS" or key[1].startswith("RFF_"):
                 latest_report = max(reports, key=lambda report: report.detection_time_s)
                 payload["evidence"] = deepcopy(latest_report.evidence)
                 payload["evidence"].update(

@@ -38,6 +38,11 @@ FORBIDDEN_ONLINE_FIELDS = {
     "offline_defense_success_truth",
     "normal_disturbance",
     "normal_disturbance_type",
+    "true_device_id",
+    "rff_ground_truth_id",
+    "noiseless_rff_vector",
+    "device_rff_baseline",
+    "noiseless_baseline",
 }
 
 LABEL_PROXY_VALUES = {
@@ -63,6 +68,7 @@ LABEL_PROXY_VALUES = {
 def _blank_packet() -> dict[str, Any]:
     return {
         "claimed_src_id": None,
+        "claimed_link_sender_id": None,
         "claimed_dst_id": None,
         "packet_type": None,
         "packet_size_bytes": None,
@@ -94,6 +100,7 @@ def _blank_phy() -> dict[str, Any]:
         "measurement_quality": None,
         "csi_mag_db": None,
         "rf_sample_ref": None,
+        "rff_observation": None,
     }
 
 
@@ -152,6 +159,14 @@ def _security_state(node: Node) -> dict[str, Any]:
         "rff_identity_confidence": node.rff_identity_confidence,
         "rff_quality": node.rff_quality,
         "rff_last_update_s": node.rff_last_update_s,
+        "rff_predicted_device_id": node.rff_predicted_device_id,
+        "rff_claimed_link_sender_id": node.rff_claimed_link_sender_id,
+        "rff_distance": node.rff_distance,
+        "rff_threshold": node.rff_threshold,
+        "rff_reason": node.rff_reason,
+        "rff_policy_state": node.rff_policy_state,
+        "rff_strict_since_s": node.rff_strict_since_s,
+        "rff_clear_since_s": node.rff_clear_since_s,
     }
 
 
@@ -185,6 +200,7 @@ def packet_features(
         }
     )
     if isinstance(item, Frame):
+        result["claimed_link_sender_id"] = item.claimed_link_sender_id
         result["hop_index"] = item.hop_index
         result["link_id"] = item.observable_link_id or item.link_id
         result["packet_size_bytes"] = (
@@ -227,7 +243,17 @@ def build_event(
     if phy:
         for key in phy_features:
             if key in phy:
-                phy_features[key] = phy[key]
+                if key == "rff_observation" and isinstance(phy[key], dict):
+                    phy_features[key] = {
+                        name: deepcopy(phy[key][name])
+                        for name in (
+                            "sample_id", "feature_schema", "feature_vector", "quality",
+                            "extraction_status", "missing_reason",
+                        )
+                        if name in phy[key]
+                    }
+                else:
+                    phy_features[key] = phy[key]
     traffic_features = _blank_traffic()
     traffic_features.update(
         {
@@ -272,6 +298,20 @@ def build_event(
         },
         "extensions": deepcopy(extensions or {}),
     }
+    if (
+        not context.config.application_layer_available and message is not None
+        and message.packet_type not in {"SECURITY_REPORT", "SECURITY_SUMMARY", "SKG_CONTROL"}
+    ):
+        packet = event["online_features"]["packet"]
+        for name in packet:
+            if name not in {"claimed_link_sender_id", "link_id", "packet_size_bytes"}:
+                packet[name] = None
+        event["availability"]["payload_available"] = False
+        event["availability"]["missing_reason"] = "APPLICATION_PROTOCOL_UNAVAILABLE"
+        event["extensions"] = {
+            name: value for name, value in event["extensions"].items()
+            if name in {"rff_decision", "air_emission_ref", "defense_result", "source_event_ids"}
+        }
     assert_online_truth_free(event)
     return event
 
